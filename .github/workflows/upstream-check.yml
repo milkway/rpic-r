@@ -1,0 +1,67 @@
+name: upstream version check
+
+# Opens an issue when a newer rpic-core is published to crates.io than the
+# version this package pins, so the R bindings can be bumped + re-vendored.
+on:
+  schedule:
+    - cron: "0 6 * * *" # daily, 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare pinned rpic-core against crates.io
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          pinned=$(grep -E '^[[:space:]]*rpic-core[[:space:]]*=' src/rust/Cargo.toml \
+            | sed -E 's/.*"([0-9][^"]*)".*/\1/' | head -1)
+          latest=$(curl -fsSL -H "User-Agent: rpic-r upstream check (leite@de.ufpe.br)" \
+            https://crates.io/api/v1/crates/rpic-core \
+            | python3 -c "import sys,json; print(json.load(sys.stdin)['crate']['max_stable_version'])")
+          echo "pinned=$pinned  latest=$latest"
+
+          if ! printf '%s' "$latest" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::unexpected crates.io version '$latest'"; exit 1
+          fi
+          if [ "$pinned" = "$latest" ]; then
+            echo "Already pinned to the latest ($latest)."; exit 0
+          fi
+          newest=$(printf '%s\n%s\n' "$pinned" "$latest" | sort -V | tail -1)
+          if [ "$newest" != "$latest" ]; then
+            echo "Pinned ($pinned) is newer than crates.io ($latest); nothing to do."; exit 0
+          fi
+
+          title="Bump rpic-core/rpic-render to v$latest (crates.io)"
+          if gh issue list --state open --search "in:title $title" --json title \
+               --jq '.[].title' | grep -qxF "$title"; then
+            echo "Issue already open: $title"; exit 0
+          fi
+
+          gh label create dependencies --color 0366d6 \
+            --description "Upstream dependency updates" 2>/dev/null || true
+
+          gh issue create --title "$title" --label dependencies --body "$(cat <<EOF
+\`rpic-core\` **v$latest** is on crates.io; this package still pins **v$pinned**.
+
+### Bump checklist
+- [ ] \`DESCRIPTION\`: bump \`Version\` (match the upstream release, e.g. \`$latest\`)
+- [ ] \`src/rust/Cargo.toml\`: set \`version\`, \`rpic-core = "$latest"\`, \`rpic-render = "$latest"\`
+- [ ] Re-vendor the Rust deps: \`rextendr::vendor_pkgs()\` (refreshes \`src/rust/Cargo.lock\`, \`vendor/\`, \`vendor.tar.xz\`, \`vendor-config.toml\`)
+- [ ] \`R CMD check\` / let CI go green
+- [ ] Tag + release \`v$latest\` on this repo
+
+Upstream: https://github.com/milkway/rpic-lang/releases
+
+_Opened automatically by \`.github/workflows/upstream-check.yml\`._
+EOF
+)"
+          echo "Opened issue: $title"
