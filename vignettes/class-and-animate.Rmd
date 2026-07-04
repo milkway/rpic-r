@@ -1,0 +1,116 @@
+---
+title: "CSS class hooks and animation"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{CSS class hooks and animation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+Two rpic extensions delegate presentation to the *host document* that embeds
+the SVG: `class` attaches CSS class names to shapes, and `animate` emits a
+timing manifest a player can drive. Neither changes rpic's own rendering —
+classic output stays byte-identical — but together they make diagrams that
+respond to the page they live in.
+
+## `class`: CSS hooks on shapes
+
+`class` has two forms writing to the same hook — inline at creation, and a
+statement form that reuses pic's object references (labels, `last line`,
+`2nd box`), which also reaches shapes drawn inside macros:
+
+```{r}
+library(rpic)
+
+svg <- rpic_svg('
+boxht = 0.4; boxwid = 0.9
+box class "service" "api"
+arrow
+box class "service hot" "billing"
+arrow
+box class "storage" "database"
+class last arrow "dataflow"
+')
+```
+
+Each class lands on the shape's SVG group (`<g id="sN" class="…">`). The
+names are validated (`[A-Za-z_][A-Za-z0-9_-]*` only), so there is no
+attribute-injection surface.
+
+Styling happens in the host page. This very vignette embeds the SVG
+**inline** below and styles it with a `<style>` block — the "billing" box is
+hot, services get a blue border, and the last arrow is dashed. That is live
+CSS, not something rpic drew:
+
+<style>
+.rpic-demo g.service rect { stroke: #2563eb; stroke-width: 1.6; }
+.rpic-demo g.hot rect     { fill: #fef2f2; stroke: #dc2626; }
+.rpic-demo g.hot text     { fill: #dc2626; }
+.rpic-demo g.storage rect { fill: #ecfdf5; stroke: #059669; }
+.rpic-demo g.dataflow *   { stroke-dasharray: 4 3; }
+</style>
+
+<div class="rpic-demo">
+```{r, echo = FALSE, eval = TRUE, results = "asis"}
+cat(readLines("figures/class.svg"), sep = "\n")
+```
+</div>
+
+Note the delegation contract: CSS only reaches **inline-embedded** SVG. An
+`<img src="…svg">` reference isolates the document, and raster (PNG/PDF)
+output ignores classes entirely — there, the diagram renders exactly as if
+no class existed.
+
+## `animate`: a timing manifest
+
+`animate` schedules an effect (`draw`, `fade`, `pop`) per shape, again
+without touching the static rendering:
+
+```{r}
+bundle <- rpic_manifest('
+boxht = 0.35; boxwid = 0.8
+A: box "build"
+arrow
+box "test"
+arrow
+box "ship"
+animate A with "pop"
+animate 2nd box with "fade"
+animate 3rd box with "draw" for 0.8
+')
+```
+
+The drawing itself is the ordinary static SVG:
+
+![three boxes labelled build, test and ship connected by arrows](figures/animate.svg)
+
+and the bundle carries an `animations` array — shape ids (the same stable
+`s<N>` ids the class hooks ride on), effect names and a resolved timeline:
+
+```{r, echo = FALSE, eval = TRUE, comment = ""}
+j <- paste(readLines("figures/animate.json"), collapse = "")
+m <- regmatches(j, regexpr('"animations":\\[[^]]*\\]', j))
+cat(gsub("},", "},\n ", m))
+```
+
+Playing it is the host's job. In the browser, the
+[`@strategicprojects/rpic`](https://www.npmjs.com/package/@strategicprojects/rpic)
+npm package ships a GSAP player: `animate(stage, animations, gsap)` builds
+the timeline (`draw` traces strokes, `pop` scales in, `fade` fades). The
+[animate extension page](https://rpic.dev/docs/extensions/animate/) shows it
+running live.
+
+Unknown effect names are accepted but reported: the bundle's `warnings`
+array flags them (`unknown_animation_effect`, with the supported list), the
+same structured-diagnostic shape used by compile errors.
+
+## Both layers together
+
+Class hooks and animation target the same shape groups, so a diagram can be
+styled by the page *and* animated by the player at once — the classes ride
+on `<g id="sN" class="…">` while the manifest addresses `sN`. Everything
+stays a plain, portable SVG for any consumer that ignores them.

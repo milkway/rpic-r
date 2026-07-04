@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128.746667" height="171.893333" viewBox="0 0 128.746667 171.893333" font-family="sans-serif" font-size="14.666667" fill="none">
+<g id="s0">
+<circle cx="90.133333" cy="84.88" r="28.8" fill="none" stroke="black" stroke-width="1.066667"/>
+</g>
+<g id="s1">
+<line x1="84.373333" y1="100.24" x2="84.373333" y2="69.52" stroke="black" stroke-width="1.066667"/>
+</g>
+<g id="s2">
+<line x1="44.053333" y1="84.88" x2="84.373333" y2="84.88" stroke="black" stroke-width="1.066667"/>
+</g>
+<g id="s3">
+<line x1="84.373333" y1="78.16" x2="105.493333" y2="63.76" stroke="black" stroke-width="1.066667"/>
+</g>
+<g id="s4">
+<line x1="105.493333" y1="63.76" x2="105.493333" y2="44.56" stroke="black" stroke-width="1.066667"/>
+</g>
+<g id="s5">
+<line x1="84.373333" y1="91.6" x2="103.676468" y2="104.761228" stroke="black" stroke-width="1.066667"/>
+<polygon stroke-width="0" points="98.913559,98.609021 105.493333,106 96.209542,102.574912" fill="black"/>
+</g>
+<g id="s6">
+<line x1="105.493333" y1="106" x2="105.493333" y2="125.2" stroke="black" stroke-width="1.066667"/>
+</g>
+<g id="s7">
+<line x1="44.053333" y1="84.88" x2="15.253333" y2="84.88" stroke="black" stroke-width="1.066667"/>
+</g>
+<g id="s8">
+<text font-size="11pt" stroke-width="0.266667" fill="black" x="8.746667" y="89.72" text-anchor="end">B</text>
+</g>
+<g id="s9">
+<line x1="105.493333" y1="44.56" x2="105.493333" y2="20.56" stroke="black" stroke-width="1.066667"/>
+</g>
+<g id="s10">
+<text font-size="11pt" stroke-width="0.266667" fill="black" x="105.493333" y="17.893333" text-anchor="middle">C</text>
+</g>
+<g id="s11">
+<line x1="105.493333" y1="125.2" x2="105.493333" y2="149.2" stroke="black" stroke-width="1.066667"/>
+</g>
+<g id="s12">
+<text font-size="11pt" stroke-width="0.266667" fill="black" x="105.493333" y="161.546667" text-anchor="middle">E</text>
+</g>
+</svg>
+

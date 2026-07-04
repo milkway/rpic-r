@@ -50,7 +50,7 @@ rpic_png('A:(0,0); B:(2,0)
 resistor(A,B)', "circuit.png", scale = 2, circuits = TRUE)
 
 # TeX math labels, typeset natively:
-rpic_svg('box "$-\\\\frac{T}{2}$" fit', texlabels = TRUE)
+rpic_svg('box "$-\\frac{T}{2}$" fit', texlabels = TRUE)
 
 # the full bundle: svg + animation manifest + diagnostics + warnings
 jsonlite::fromJSON(rpic_manifest('box; animate last box with "pop"'))

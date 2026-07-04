@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="225.92" height="139.97905" viewBox="0 0 225.92 139.97905" font-family="sans-serif" font-size="14.666667" fill="none">
+<g id="s0">
+<defs><linearGradient id="grad0" gradientUnits="objectBoundingBox" x1="0" y1="0.5" x2="1" y2="0.5">
+<stop offset="0" stop-color="steelblue"/>
+<stop offset="1" stop-color="white"/>
+</linearGradient></defs>
+<rect x="6.826667" y="64.005716" width="86.4" height="52.8" fill="url(#grad0)" stroke="black" stroke-width="1.066667"/>
+</g>
+<g id="s1">
+<text font-size="11pt" stroke-width="0.266667" fill="black" x="50.026667" y="95.245716" text-anchor="middle">gradient</text>
+</g>
+<g id="s2">
+<defs><pattern id="hatch1" patternUnits="userSpaceOnUse" width="7.68" height="7.68" patternTransform="rotate(-45)">
+<line x1="-7.68" y1="0" x2="15.36" y2="0" stroke="black" stroke-width="1.066667"/>
+</pattern></defs>
+<circle cx="189.226667" cy="90.405716" r="28.8" fill="url(#hatch1)" stroke="black" stroke-width="1.066667"/>
+</g>
+<g id="s3">
+<text font-size="11pt" stroke-width="0.266667" fill="black" x="189.226667" y="131.552383" text-anchor="middle">hatch</text>
+</g>
+<g id="s4">
+<path d="M 6.826667 49.605716 C 6.954439 45.313051, 10.537911 41.936738, 14.830576 42.06451 C 14.830576 42.06451, 98.940563 44.568058, 98.940563 44.568058 C 104.187154 44.724224, 108.566953 40.597619, 108.723119 35.351028 C 108.566953 40.597619, 112.693558 44.977418, 117.940148 45.133584 C 117.940148 45.133584, 202.050136 47.637132, 202.050136 47.637132 C 206.342801 47.764904, 209.719114 51.348376, 209.591342 55.641041" fill="none" stroke="black" stroke-width="1.066667"/>
+<text font-size="11pt" stroke-width="0.2pt" fill="black" x="109.326092" y="19.933333" text-anchor="middle">extensions</text>
+</g>
+</svg>
+
