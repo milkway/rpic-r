@@ -9,3 +9,4 @@
 ^docs$
 ^pkgdown$
 ^\.DS_Store$
+^data-raw$

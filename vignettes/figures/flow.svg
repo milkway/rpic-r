@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="324.8" height="171.200001" viewBox="0 0 324.8 171.200001" font-family="sans-serif" font-size="14.666667" fill="none">
+<g id="s0">
+<rect x="1.066667" y="127.733335" width="76.8" height="33.6" fill="none" stroke="black" stroke-width="1.066667"/>
+<text font-size="11pt" stroke-width="0.2pt" fill="black" x="39.466667" y="149.373335" text-anchor="middle">input</text>
+</g>
+<g id="s1">
+<line x1="77.866667" y1="144.533335" x2="123.667677" y2="144.533335" stroke="black" stroke-width="1.066667"/>
+<polygon stroke-width="0" points="116.266667,142.133335 125.866667,144.533335 116.266667,146.933335" fill="black"/>
+</g>
+<g id="s2">
+<rect x="125.866667" y="127.733335" width="76.8" height="33.6" fill="rgb(230,230,230)" stroke="black" stroke-width="1.066667"/>
+<text font-size="11pt" stroke-width="0.2pt" fill="black" x="164.266667" y="149.373335" text-anchor="middle">process</text>
+</g>
+<g id="s3">
+<line x1="202.666667" y1="144.533335" x2="248.467677" y2="144.533335" stroke="black" stroke-width="1.066667"/>
+<polygon stroke-width="0" points="241.066667,142.133335 250.666667,144.533335 241.066667,146.933335" fill="black"/>
+</g>
+<g id="s4">
+<ellipse cx="286.666667" cy="144.533335" rx="36" ry="24" fill="none" stroke="black" stroke-width="1.066667"/>
+<text font-size="11pt" stroke-width="0.2pt" fill="black" x="286.666667" y="149.373335" text-anchor="middle">output</text>
+</g>
+<g id="s5">
+<path stroke-width="0" stroke="black" fill="black" d="M 286.015142,110.957885 L 283.628805,111.213611 A 123.652416 123.652416 0 0 1 286.666667 120.533335 A 123.652416 123.652416 0 0 0 288.401479 110.70216 L 286.015142,110.957885"/>
+<path d="M 39.466667 127.733335 A 123.652416 123.652416 0 0 1 286.586166 118.401547" fill="none" stroke="black" stroke-width="1.066667"/>
+</g>
+</svg>
+

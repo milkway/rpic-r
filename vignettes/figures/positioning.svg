@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="224" height="80" viewBox="0 0 224 80" font-family="sans-serif" font-size="14.666667" fill="none">
+<g id="s0">
+<rect x="5.866667" y="34.133333" width="57.6" height="38.4" fill="none" stroke="black" stroke-width="1.066667"/>
+<text font-size="11pt" stroke-width="0.2pt" fill="black" x="34.666667" y="58.173333" text-anchor="middle">A</text>
+</g>
+<g id="s1">
+<rect x="159.466667" y="34.133333" width="57.6" height="38.4" fill="none" stroke="black" stroke-width="1.066667"/>
+<text font-size="11pt" stroke-width="0.2pt" fill="black" x="188.266667" y="58.173333" text-anchor="middle">B</text>
+</g>
+<g id="s2">
+<line x1="63.466667" y1="53.333333" x2="159.466667" y2="53.333333" stroke="black" stroke-width="1.066667" stroke-dasharray="5.6,4"/>
+</g>
+<g id="s3">
+<circle cx="111.466667" cy="53.333333" r="5.76" fill="rgb(0,0,0)" stroke="black" stroke-width="1.066667"/>
+</g>
+<g id="s4">
+<text font-size="11pt" stroke-width="0.266667" fill="black" x="111.466667" y="71.44" text-anchor="middle">midpoint</text>
+</g>
+<g id="s5">
+<polyline points="34.666667,34.133333 34.666667,5.333333 188.266667,5.333333 188.266667,34.133333 188.266667,34.133333" fill="none" stroke="black" stroke-width="1.066667"/>
+</g>
+<g id="s6">
+<text font-size="11pt" stroke-width="0.266667" fill="black" x="111.466667" y="18.813333" text-anchor="middle">the long way</text>
+</g>
+</svg>
+

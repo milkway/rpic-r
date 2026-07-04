@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="358.4" height="41.6" viewBox="0 0 358.4 41.6" font-family="sans-serif" font-size="14.666667" fill="none">
+<g id="s0" class="service">
+<rect x="1.066667" y="0.533333" width="86.4" height="38.4" fill="none" stroke="black" stroke-width="1.066667"/>
+<text font-size="11pt" stroke-width="0.2pt" fill="black" x="44.266667" y="24.573333" text-anchor="middle">api</text>
+</g>
+<g id="s1">
+<line x1="87.466667" y1="19.733333" x2="133.267677" y2="19.733333" stroke="black" stroke-width="1.066667"/>
+<polygon stroke-width="0" points="125.866667,17.333333 135.466667,19.733333 125.866667,22.133333" fill="black"/>
+</g>
+<g id="s2" class="service hot">
+<rect x="135.466667" y="0.533333" width="86.4" height="38.4" fill="none" stroke="black" stroke-width="1.066667"/>
+<text font-size="11pt" stroke-width="0.2pt" fill="black" x="178.666667" y="24.573333" text-anchor="middle">billing</text>
+</g>
+<g id="s3" class="dataflow">
+<line x1="221.866667" y1="19.733333" x2="267.667677" y2="19.733333" stroke="black" stroke-width="1.066667"/>
+<polygon stroke-width="0" points="260.266667,17.333333 269.866667,19.733333 260.266667,22.133333" fill="black"/>
+</g>
+<g id="s4" class="storage">
+<rect x="269.866667" y="0.533333" width="86.4" height="38.4" fill="none" stroke="black" stroke-width="1.066667"/>
+<text font-size="11pt" stroke-width="0.2pt" fill="black" x="313.066667" y="24.573333" text-anchor="middle">database</text>
+</g>
+</svg>
+
