@@ -12,10 +12,13 @@ use extendr_api::prelude::*;
 /// `circuits`/`texlabels` are compile options (not text prepended to the
 /// source), so diagnostic positions stay relative to the caller's own `src`.
 fn opts(circuits: bool, texlabels: bool) -> rpic_core::CompileOptions {
+    // `..Default::default()` keeps this resilient to additive CompileOptions
+    // fields (0.6.2 grew `includes`; defaults = no base dir, unrestricted —
+    // the local-CLI semantics, right for an R package on the user's machine).
     rpic_core::CompileOptions {
         circuits,
         texlabels,
-        base: None,
+        ..Default::default()
     }
 }
 

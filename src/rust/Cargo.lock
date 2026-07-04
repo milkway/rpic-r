@@ -912,7 +912,7 @@ dependencies = [
 
 [[package]]
 name = "rpic"
-version = "0.6.1"
+version = "0.6.2"
 dependencies = [
  "extendr-api",
  "rpic-core",
@@ -921,15 +921,15 @@ dependencies = [
 
 [[package]]
 name = "rpic-core"
-version = "0.6.1"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcfa035d32dc85d1428cab850e40b7c6f6546a7637dfc6752765d5f76b2ee743"
+checksum = "2cd09a52bac711f02fcd67a551002908a68766d631130ddaf6e346ce03b91eaa"
 
 [[package]]
 name = "rpic-render"
-version = "0.6.1"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec225817c5002452b1f2d60e0df31f4539a8063e4aaefc1a483302e11132b415"
+checksum = "368b3f1cd2952819f9b703d6e885bac4a41e2003648b5f1a854c07c5a80f9c6e"
 dependencies = [
  "ratex-layout",
  "ratex-parser",
