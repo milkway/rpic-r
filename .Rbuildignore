@@ -10,3 +10,6 @@
 ^pkgdown$
 ^\.DS_Store$
 ^data-raw$
+^.*\.Rproj$
+^\.Rproj\.user$
+^CRAN-SUBMISSION$
