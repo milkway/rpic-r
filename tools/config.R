@@ -23,15 +23,31 @@ if (is_debug) {
 
 if (!is_not_cran) {
   message("Building for CRAN.")
+  # CRAN builds MUST be offline from vendored sources (CRAN Rust policy).
+  # A tarball built without running rextendr::vendor_crates(".") first
+  # silently downloaded crates on the 0.6.2 pretest (Debian WARNING) and
+  # built online/unbounded on Windows. Fail closed instead:
+  if (!vendor_exists) {
+    stop(
+      "src/rust/vendor.tar.xz is missing.\n",
+      "  - Submitting/building for CRAN: run rextendr::vendor_crates(\".\") first.\n",
+      "  - Local dev build from a git clone: set NOT_CRAN=true.",
+      call. = FALSE
+    )
+  }
 }
 
 # we set cran flags only if NOT_CRAN is empty and if
 # the vendored crates are present.
-.cran_flags <- ifelse(
-  !is_not_cran && vendor_exists,
-  "-j 2 --offline",
+# CRAN policy: at most 2 build jobs; offline whenever the vendored
+# sources are present (for CRAN they always are — see the guard above).
+.cran_flags <- if (!is_not_cran) {
+  "-j 2 --offline"
+} else if (vendor_exists) {
+  "--offline"
+} else {
   ""
-)
+}
 
 # when DEBUG env var is present we use `--debug` build
 .profile <- ifelse(is_debug, "", "--release")
