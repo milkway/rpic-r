@@ -35,12 +35,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-pandoc@v2
       - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
       - uses: dtolnay/rust-toolchain@stable
       - name: Build vendored source tarball
+        # knitr/rmarkdown + pandoc: R CMD build renders the vignettes
         run: |
           cargo update --manifest-path src/rust/Cargo.toml
-          Rscript -e 'install.packages("rextendr")'
+          Rscript -e 'install.packages(c("rextendr", "knitr", "rmarkdown"))'
           Rscript -e 'rextendr::vendor_crates(".")'
           R CMD build .
       - uses: softprops/action-gh-release@v3
