@@ -1,3 +1,11 @@
+# rpic 0.6.2
+
+* Track rpic 0.6.2 (the 2026-07 audit series): always-valid SVG for negative
+  dimensions, canvas bounds that contain arrowheads and math fragments,
+  dpic-parity fixes for `chop`/`continue`/dead `for` bodies, and structured
+  eval-phase diagnostics with include attribution.
+* Internal: the option builder is resilient to additive engine option fields.
+
 # rpic 0.6.1
 
 * Track rpic 0.6.1 (`rpic-core`/`rpic-render` from crates.io; previously 0.1.0).
