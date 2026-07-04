@@ -2,20 +2,29 @@
 % Please edit documentation in R/rpic.R
 \name{rpic_manifest}
 \alias{rpic_manifest}
-\title{Compile to a JSON \verb{\{svg, animations\}} bundle (as a string)}
+\title{Compile to a JSON bundle (as a string)}
 \usage{
-rpic_manifest(src, circuits = FALSE)
+rpic_manifest(src, circuits = FALSE, texlabels = FALSE)
 }
 \arguments{
 \item{src}{pic source code.}
 
-\item{circuits}{load the native circuit-element library.}
+\item{circuits}{load the native circuit-element library (or write
+\verb{copy "circuits"} in the source itself).}
+
+\item{texlabels}{typeset fully \verb{$...$}-delimited labels as TeX math
+(initializer only — the source can still set \code{texlabels = 0}).}
 }
 \value{
-a JSON string.
+a JSON string; parse with e.g. \code{jsonlite::fromJSON()}.
 }
 \description{
-Compile to a JSON \verb{\{svg, animations\}} bundle (as a string)
+Returns \verb{\{svg, animations, diagnostics, warnings\}} — \code{warnings} carries
+structured compiler warnings for accepted-but-ignored input (unknown
+attribute words, unknown \code{animate} effects), each with the same fields as
+the \code{rpic_error} diagnostic. On a pic error the JSON is
+\verb{\{error, error_info\}} instead (no condition is raised — the error travels
+in-band).
 }
 \examples{
 rpic_manifest('box; animate last box with "pop"')

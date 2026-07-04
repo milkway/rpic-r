@@ -17,4 +17,6 @@ A:(0,0); B:(2,0)
 resistor(A,B)
 ```
 }\if{html}{\out{</div>}}
+
+Chunk options: \code{circuits}, \code{texlabels}, \code{scale}.
 }

@@ -5,12 +5,12 @@
 #' @useDynLib rpic, .registration = TRUE
 NULL
 
-rpic_svg_ <- function(src, circuits) .Call(wrap__rpic_svg_, src, circuits)
+rpic_svg_ <- function(src, circuits, texlabels) .Call(wrap__rpic_svg_, src, circuits, texlabels)
 
-rpic_png_ <- function(src, file, scale, circuits) .Call(wrap__rpic_png_, src, file, scale, circuits)
+rpic_png_ <- function(src, file, scale, circuits, texlabels) .Call(wrap__rpic_png_, src, file, scale, circuits, texlabels)
 
-rpic_pdf_ <- function(src, file, circuits) .Call(wrap__rpic_pdf_, src, file, circuits)
+rpic_pdf_ <- function(src, file, circuits, texlabels) .Call(wrap__rpic_pdf_, src, file, circuits, texlabels)
 
-rpic_manifest_ <- function(src, circuits) .Call(wrap__rpic_manifest_, src, circuits)
+rpic_manifest_ <- function(src, circuits, texlabels) .Call(wrap__rpic_manifest_, src, circuits, texlabels)
 
 # nolint end

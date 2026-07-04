@@ -33,7 +33,24 @@ library(rpic)
 rpic_svg('box "hi"; arrow; circle "x"')
 rpic_png('A:(0,0); B:(2,0)\nresistor(A,B)', "circuit.png", scale = 2, circuits = TRUE)
 rpic_pdf('box "hi"', "out.pdf")
+
+# TeX math labels, exactly like `rpic -t`:
+rpic_svg('box "$-\\\\frac{T}{2}$" fit', texlabels = TRUE)
+
+# svg + animation manifest + diagnostics + structured warnings:
 jsonlite::fromJSON(rpic_manifest('box; animate last box with "pop"'))
+```
+
+Compile errors are classed `rpic_error` conditions carrying the structured
+diagnostic — position (relative to *your* source, even with
+`circuits = TRUE`), kind, and a did-you-mean hint:
+
+```r
+tryCatch(
+  rpic_svg("bxo", circuits = TRUE),
+  rpic_error = function(e) list(line = e$info$line, hint = e$info$hint)
+)
+#> $line [1] 1      $hint "did you mean `box`?"
 ```
 
 ### knitr engine

@@ -4,7 +4,7 @@
 \alias{rpic_pdf}
 \title{Render pic source to a PDF file}
 \usage{
-rpic_pdf(src, file, circuits = FALSE)
+rpic_pdf(src, file, circuits = FALSE, texlabels = FALSE)
 }
 \arguments{
 \item{src}{pic source code.}
@@ -12,6 +12,8 @@ rpic_pdf(src, file, circuits = FALSE)
 \item{file}{output path.}
 
 \item{circuits}{load the native circuit-element library.}
+
+\item{texlabels}{typeset \verb{$...$} labels as TeX math.}
 }
 \value{
 the file path, invisibly.

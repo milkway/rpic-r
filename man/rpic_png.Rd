@@ -4,7 +4,7 @@
 \alias{rpic_png}
 \title{Render pic source to a PNG file}
 \usage{
-rpic_png(src, file, scale = 2, circuits = FALSE)
+rpic_png(src, file, scale = 2, circuits = FALSE, texlabels = FALSE)
 }
 \arguments{
 \item{src}{pic source code.}
@@ -14,6 +14,8 @@ rpic_png(src, file, scale = 2, circuits = FALSE)
 \item{scale}{raster scale (1 = 96 dpi).}
 
 \item{circuits}{load the native circuit-element library.}
+
+\item{texlabels}{typeset \verb{$...$} labels as TeX math.}
 }
 \value{
 the file path, invisibly.
