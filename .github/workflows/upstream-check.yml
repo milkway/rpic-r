@@ -24,7 +24,7 @@ jobs:
 
           pinned=$(grep -E '^[[:space:]]*rpic-core[[:space:]]*=' src/rust/Cargo.toml \
             | sed -E 's/.*"([0-9][^"]*)".*/\1/' | head -1)
-          latest=$(curl -fsSL -H "User-Agent: rpic-r upstream check (leite@de.ufpe.br)" \
+          latest=$(curl -fsSL -H "User-Agent: rpic-r upstream check (leite@castlab.org)" \
             https://crates.io/api/v1/crates/rpic-core \
             | python3 -c "import sys,json; print(json.load(sys.stdin)['crate']['max_stable_version'])")
           echo "pinned=$pinned  latest=$latest"
@@ -49,19 +49,24 @@ jobs:
           gh label create dependencies --color 0366d6 \
             --description "Upstream dependency updates" 2>/dev/null || true
 
-          gh issue create --title "$title" --label dependencies --body "$(cat <<EOF
-\`rpic-core\` **v$latest** is on crates.io; this package still pins **v$pinned**.
-
-### Bump checklist
-- [ ] \`DESCRIPTION\`: bump \`Version\` (match the upstream release, e.g. \`$latest\`)
-- [ ] \`src/rust/Cargo.toml\`: set \`version\`, \`rpic-core = "$latest"\`, \`rpic-render = "$latest"\`
-- [ ] Re-vendor the Rust deps: \`rextendr::vendor_pkgs()\` (refreshes \`src/rust/Cargo.lock\`, \`vendor/\`, \`vendor.tar.xz\`, \`vendor-config.toml\`)
-- [ ] \`R CMD check\` / let CI go green
-- [ ] Tag + release \`v$latest\` on this repo
-
-Upstream: https://github.com/milkway/rpic-lang/releases
-
-_Opened automatically by \`.github/workflows/upstream-check.yml\`._
-EOF
-)"
+          # NOTE: no heredoc here — a column-0 heredoc body terminates the
+          # YAML block scalar and invalidates the whole workflow file (this
+          # exact workflow was broken from birth that way; every push showed
+          # a jobless "workflow file issue" failure).
+          {
+            echo "\`rpic-core\` **v$latest** is on crates.io; this package still pins **v$pinned**."
+            echo
+            echo "### Bump checklist"
+            echo "- [ ] \`DESCRIPTION\`: bump \`Version\` (match the upstream release, e.g. \`$latest\`)"
+            echo "- [ ] \`src/rust/Cargo.toml\`: set \`version\`, \`rpic-core = \"$latest\"\`, \`rpic-render = \"$latest\"\`"
+            echo "- [ ] Re-vendor: \`rextendr::vendor_crates(\".\")\` (refreshes \`Cargo.lock\`, \`vendor.tar.xz\`, \`vendor-config.toml\`)"
+            echo "- [ ] Shim still compiles: \`cargo check --manifest-path src/rust/Cargo.toml\` (caret pins pull new cores; additive struct fields broke it once)"
+            echo "- [ ] \`R CMD check\` / let CI go green"
+            echo "- [ ] Tag + release \`v$latest\` on this repo"
+            echo
+            echo "Upstream: https://github.com/milkway/rpic-lang/releases"
+            echo
+            echo "_Opened automatically by \`.github/workflows/upstream-check.yml\`._"
+          } > /tmp/issue-body.md
+          gh issue create --title "$title" --label dependencies --body-file /tmp/issue-body.md
           echo "Opened issue: $title"
