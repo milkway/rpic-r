@@ -17,3 +17,4 @@ src/rust/vendor/
 src/rust/vendor.tar.xz
 src/rust/vendor-config.toml
 .DS_Store
+docs/

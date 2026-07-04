@@ -1,0 +1,36 @@
+url: https://milkway.github.io/rpic-r/
+
+template:
+  bootstrap: 5
+  bslib:
+    primary: "#2f5d43"
+
+home:
+  title: rpic — the pic graphics language in R
+  links:
+    - text: The rpic language (docs & live examples)
+      href: https://rpic.dev
+    - text: Engine repository (rpic-lang)
+      href: https://github.com/milkway/rpic-lang
+
+reference:
+  - title: Render
+    desc: Compile pic source and render it.
+    contents:
+      - rpic_svg
+      - rpic_png
+      - rpic_pdf
+  - title: Bundle and diagnostics
+    desc: The full compile bundle — SVG, animation manifest, diagnostics and warnings.
+    contents:
+      - rpic_manifest
+  - title: knitr / Quarto
+    desc: Inline pic diagrams in R Markdown and Quarto chunks.
+    contents:
+      - rpic_knitr_engine
+      - rpic_register_knitr
+
+news:
+  releases:
+    - text: rpic 0.6.1
+      href: https://github.com/milkway/rpic-r/releases/tag/v0.6.1

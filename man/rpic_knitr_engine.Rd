@@ -9,6 +9,10 @@ rpic_knitr_engine(options)
 \arguments{
 \item{options}{knitr chunk options.}
 }
+\value{
+The chunk output produced by \code{\link[knitr:engine_output]{knitr::engine_output()}} (the rendered
+diagram as an included figure).
+}
 \description{
 Register with \code{\link[=rpic_register_knitr]{rpic_register_knitr()}}, then write pic code in a chunk:
 

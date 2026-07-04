@@ -4,13 +4,16 @@
 \name{rpic-package}
 \alias{rpic}
 \alias{rpic-package}
-\title{rpic: The Pic Graphics Language Rendered to SVG, PNG and PDF}
+\title{rpic: The 'pic' Graphics Language Rendered to SVG, PNG and PDF}
 \description{
-R bindings to rpic, a Rust reimplementation of the pic picture-drawing language, rendering diagrams to SVG, PNG and PDF, with a native circuit-element library and a knitr language engine.
+\if{html}{\figure{logo.svg}{options: style='float: right' alt='logo' width='120'}}
+
+Renders diagrams written in the 'pic' picture-drawing language (Kernighan, 1984) to SVG, PNG and PDF, using 'rpic' \url{https://github.com/milkway/rpic-lang}, a reimplementation of 'pic' in 'Rust' with no system dependencies. Includes a native circuit-element library in the spirit of 'circuit_macros', TeX math labels typeset natively, structured compile diagnostics, and a 'knitr' language engine for inline diagrams in 'R Markdown' and 'Quarto' documents.
 }
 \seealso{
 Useful links:
 \itemize{
+  \item \url{https://milkway.github.io/rpic-r/}
   \item \url{https://github.com/milkway/rpic-r}
   \item \url{https://github.com/milkway/rpic-lang}
   \item Report bugs at \url{https://github.com/milkway/rpic-r/issues}
@@ -18,11 +21,16 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: André Leite \email{leite@de.ufpe.br}
+\strong{Maintainer}: André Leite \email{leite@castlab.org} [copyright holder]
 
 Authors:
 \itemize{
-  \item André Leite \email{leite@de.ufpe.br}
+  \item André Leite \email{leite@castlab.org} [copyright holder]
+}
+
+Other contributors:
+\itemize{
+  \item The authors of the dependency Rust crates (see inst/AUTHORS for details) [copyright holder]
 }
 
 }
