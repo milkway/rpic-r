@@ -1,65 +1,88 @@
-# rpic (R)
+# rpic <a href="https://milkway.github.io/rpic-r/"><img src="man/figures/logo.svg" align="right" height="120" alt="rpic website" /></a>
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/milkway/rpic-r/actions/workflows/R-CMD-check.yml/badge.svg)](https://github.com/milkway/rpic-r/actions/workflows/R-CMD-check.yml)
+[![pkgdown](https://github.com/milkway/rpic-r/actions/workflows/pkgdown.yml/badge.svg)](https://milkway.github.io/rpic-r/)
+[![CRAN status](https://www.r-pkg.org/badges/version/rpic)](https://CRAN.R-project.org/package=rpic)
+[![GitHub release](https://img.shields.io/github/v/release/milkway/rpic-r)](https://github.com/milkway/rpic-r/releases)
 [![License: BSD-2](https://img.shields.io/badge/license-BSD--2--Clause-blue.svg)](LICENSE)
 <!-- badges: end -->
 
-R bindings for [**rpic**](https://github.com/milkway/rpic-lang) — a Rust
-reimplementation of the **pic** picture-drawing language, rendering diagrams to
-**SVG / PNG / PDF**, with a native circuit-element library and a **knitr** engine
-for inline diagrams in R Markdown / Quarto.
+R bindings for [**rpic**](https://rpic.dev) — a Rust reimplementation of
+Brian Kernighan's **pic** picture-drawing language. You describe a diagram
+by *walking around a plane dropping primitives*; rpic renders it to
+**SVG / PNG / PDF**, pure Rust, no system dependencies (no troff, no LaTeX,
+no ImageMagick):
 
-This package wraps the Rust crates
-[`rpic-core`](https://crates.io/crates/rpic-core) /
-[`rpic-render`](https://crates.io/crates/rpic-render) via
-[extendr](https://extendr.rs/). The engine is developed in the
-[rpic-lang](https://github.com/milkway/rpic-lang) monorepo.
+- **79 native circuit elements** — a from-scratch re-imagining of
+  `circuit_macros` (`circuits = TRUE` or `copy "circuits"` in the source);
+- **TeX math labels** typeset natively (`texlabels = TRUE`, KaTeX-grade via
+  a pure-Rust engine);
+- **structured diagnostics** — compile errors are classed conditions with
+  exact positions and did-you-mean hints;
+- a **knitr engine** for inline diagrams in R Markdown / Quarto.
+
+The language, its extensions and a live playground are documented at
+[rpic.dev](https://rpic.dev); this package wraps the same engine via
+[extendr](https://extendr.rs/).
 
 ## Install
-
-Requires a [Rust toolchain](https://rustup.rs) (`cargo`/`rustc`) to build.
 
 ```r
 # install.packages("remotes")
 remotes::install_github("milkway/rpic-r")
 ```
 
+Building from source requires a [Rust toolchain](https://rustup.rs)
+(`cargo`/`rustc`). Release tarballs with vendored Rust dependencies (no
+network needed at build time) are attached to each
+[GitHub release](https://github.com/milkway/rpic-r/releases).
+
 ## Usage
 
 ```r
 library(rpic)
 
-rpic_svg('box "hi"; arrow; circle "x"')
-rpic_png('A:(0,0); B:(2,0)\nresistor(A,B)', "circuit.png", scale = 2, circuits = TRUE)
-rpic_pdf('box "hi"', "out.pdf")
+rpic_svg('box "input"; arrow; box "process" fill 0.9; arrow; ellipse "output"')
 
-# TeX math labels, exactly like `rpic -t`:
+# circuit library — two-terminal elements take two named points:
+rpic_png('A:(0,0); B:(2,0)
+resistor(A,B)', "circuit.png", scale = 2, circuits = TRUE)
+
+# TeX math labels, typeset natively:
 rpic_svg('box "$-\\\\frac{T}{2}$" fit', texlabels = TRUE)
 
-# svg + animation manifest + diagnostics + structured warnings:
+# the full bundle: svg + animation manifest + diagnostics + warnings
 jsonlite::fromJSON(rpic_manifest('box; animate last box with "pop"'))
 ```
 
-Compile errors are classed `rpic_error` conditions carrying the structured
-diagnostic — position (relative to *your* source, even with
-`circuits = TRUE`), kind, and a did-you-mean hint:
+### Errors you can point at
+
+Compile failures raise a classed `rpic_error` condition carrying the
+structured diagnostic — position (always relative to *your* source, even
+with `circuits = TRUE`), kind, and a did-you-mean hint:
 
 ```r
 tryCatch(
   rpic_svg("bxo", circuits = TRUE),
   rpic_error = function(e) list(line = e$info$line, hint = e$info$hint)
 )
-#> $line [1] 1      $hint "did you mean `box`?"
+#> $line
+#> [1] 1
+#> $hint
+#> [1] "did you mean `box`?"
 ```
 
-### knitr engine
+`e$info$file` names a `copy` include when the problem is inside one
+(`NA` means your own input).
+
+### knitr / Quarto engine
 
 ```r
 rpic::rpic_register_knitr()
 ```
 
-then in an R Markdown / Quarto document:
+then write pic code directly in a chunk:
 
 ````
 ```{rpic, circuits=TRUE, scale=2}
@@ -68,19 +91,29 @@ resistor(A,B)
 ```
 ````
 
+Chunk options: `circuits`, `texlabels`, `scale`.
+
 ## Develop
 
 ```r
 devtools::load_all(".")      # compiles the Rust and loads the package
 ```
 
-For an installable/CRAN-ready tarball, the Rust dependencies are vendored:
+For an installable/CRAN-style tarball, the Rust dependencies are vendored:
 
 ```r
-rextendr::vendor_pkgs(".")   # bundles crate sources into src/rust/vendor.tar.xz
+rextendr::vendor_crates(".")   # bundles crate sources into src/rust/vendor.tar.xz
 R CMD build .
 ```
 
+## Acknowledgments
+
+pic was created by **Brian W. Kernighan**; `dpic` and `circuit_macros` are
+**J. D. Aplevich**'s; `pikchr` is **D. Richard Hipp**'s. See
+[ACKNOWLEDGMENTS](https://github.com/milkway/rpic-lang/blob/main/ACKNOWLEDGMENTS.md)
+in the engine repository.
+
 ## License
 
-BSD-2-Clause.
+BSD-2-Clause. Compiled Rust dependencies are acknowledged in
+[`inst/AUTHORS`](inst/AUTHORS).

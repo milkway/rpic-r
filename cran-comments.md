@@ -1,33 +1,47 @@
+# CRAN comments — rpic 0.6.1
+
 ## R CMD check results
 
 0 errors | 0 warnings | 1 note
 
-* This is a new submission.
-* The package contains compiled Rust code (via the extendr framework). Rust
-  dependencies are vendored into `src/rust/vendor.tar.xz` and built offline, per
-  the CRAN policy for Rust-based packages. `SystemRequirements: Cargo (Rust's
-  package manager), rustc` is declared.
+* New submission.
+
+## Rust code (CRAN policy compliance)
+
+The package statically links compiled Rust code via the extendr framework:
+
+* `SystemRequirements: Cargo (Rust's package manager), rustc` is declared;
+  `tools/msrv.R` verifies the toolchain and reports `cargo`/`rustc` versions
+  during configure.
+* All crate dependencies are fetched from crates.io by version (the engine
+  crates `rpic-core`/`rpic-render` are published there) and **vendored** into
+  `src/rust/vendor.tar.xz`; on CRAN the build runs **offline**
+  (`--offline -j 2`, at most 2 jobs).
+* Authorship/copyright of the vendored crates is acknowledged in
+  `Authors@R` (`cph`) and itemized in `inst/AUTHORS` (crate, version,
+  license, authors); full license texts ship inside the vendored sources.
+* Build leftovers (`.cargo`, `vendor/`, `target/`) are removed by the
+  Makevars cleanup targets.
+
+## Package size
+
+The source tarball exceeds the usual size guideline because of the vendored
+Rust sources (`src/rust/vendor.tar.xz`), which the CRAN Rust policy requires
+for offline builds. The vendored archive is xz-compressed and contains only
+crate sources.
+
+## Submission tarball
+
+Built with the vendored sources included:
+
+```r
+rextendr::vendor_crates(".")   # regenerates src/rust/vendor.tar.xz
+```
+
+then `R CMD build .` and `R CMD check --as-cran rpic_0.6.1.tar.gz`.
 
 ## Test environments
 
-* local macOS (R 4.6), GitHub Actions: ubuntu-latest and macOS-latest.
-
-## Notes for submission
-
-**Dependency model:** `R CMD check` builds the package in a copied tree, where
-the in-repo Rust path dependencies (`rpic-core`, `rpic-render`) cannot be
-resolved (cargo does not vendor path deps). The clean fix — required before a
-real CRAN submission — is to publish `rpic-core` and `rpic-render` to crates.io
-and depend on them by version, so `cargo vendor` bundles them into
-`vendor.tar.xz`. Until then, develop with `devtools::load_all("bindings/r")`.
-
-CRAN submission is a manual step (https://cran.r-project.org/submit.html). Before
-submitting:
-
-0. Publish `rpic-core` and `rpic-render` to crates.io and switch
-   `bindings/r/src/rust/Cargo.toml` to version deps.
-
-1. Run `rextendr::vendor_pkgs("bindings/r")` so the vendored sources ship in the
-   tarball.
-2. `R CMD build bindings/r` then `R CMD check --as-cran rpic_*.tar.gz`.
-3. Address any remaining NOTEs and submit the resulting tarball.
+* local macOS (R 4.6, rustc stable)
+* GitHub Actions ubuntu-latest (R release, rustc stable) — R CMD check runs
+  against the vendored, offline build on every push/PR.

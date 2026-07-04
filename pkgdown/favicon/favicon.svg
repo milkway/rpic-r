@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="103.04" height="103.04" viewBox="0 0 103.04 103.04" font-family="sans-serif" font-size="14.666667" fill="none"><metadata><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/"><rdf:Description><dc:creator>RealFaviconGenerator</dc:creator><dc:source>https://realfavicongenerator.net</dc:source></rdf:Description></rdf:RDF></metadata><g id="s0">
+<defs><linearGradient id="grad0" gradientUnits="objectBoundingBox" x1="0.853553" y1="0.853553" x2="0.146447" y2="0.146447">
+<stop offset="0" stop-color="darkgreen"></stop>
+<stop offset="1" stop-color="seagreen"></stop>
+</linearGradient></defs>
+<rect x="2.986667" y="2.453333" width="96" height="96" rx="23.04" fill="url(#grad0)" stroke="darkgreen" stroke-width="2"></rect>
+</g><g id="s1">
+<line x1="38.506667" y1="76.373333" x2="38.506667" y2="27.413333" stroke="honeydew" stroke-width="12"></line>
+</g><g id="s2">
+<path d="M 38.506667 44.693333 C 39.146667 42.453333 39.786667 40.213333 40.426667 37.973333 41.706667 33.493333 44.746667 30.293333 49.546667 28.373333 54.346667 26.453333 58.506667 26.773333 62.026667 29.333333 63.786667 30.613333 65.546667 31.893333 67.306667 33.173333" fill="none" stroke="honeydew" stroke-width="12"></path>
+</g><g id="s3">
+<circle cx="54.826667" cy="43.253333" r="15.36" fill="none" stroke="gold" stroke-width="1.466667" stroke-dasharray="3.136,2.24"></circle>
+</g><g id="s4">
+<line x1="51.466667" y1="43.253333" x2="58.186667" y2="43.253333" stroke="gold" stroke-width="1.466667"></line>
+</g><g id="s5">
+<line x1="54.826667" y1="46.613333" x2="54.826667" y2="39.893333" stroke="gold" stroke-width="1.466667"></line>
+</g><g id="s6">
+<line x1="29.866667" y1="76.373333" x2="17.386667" y2="76.373333" stroke="gold" stroke-width="1.2"></line>
+</g><g id="s7">
+<line x1="29.866667" y1="27.413333" x2="17.386667" y2="27.413333" stroke="gold" stroke-width="1.2"></line>
+</g><g id="s8">
+<line x1="21.226667" y1="76.373333" x2="21.226667" y2="29.028883" stroke="gold" stroke-width="1.2"></line>
+<polygon stroke-width="0" points="19.306667,32.213333 21.226667,27.413333 23.146667,32.213333" fill="gold"></polygon>
+</g></svg>

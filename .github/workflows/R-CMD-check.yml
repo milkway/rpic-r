@@ -22,7 +22,7 @@ jobs:
         run: |
           cargo update --manifest-path src/rust/Cargo.toml
           Rscript -e 'install.packages("rextendr")'
-          Rscript -e 'rextendr::vendor_pkgs(".")'
+          Rscript -e 'rextendr::vendor_crates(".")'
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::rcmdcheck
@@ -41,7 +41,7 @@ jobs:
         run: |
           cargo update --manifest-path src/rust/Cargo.toml
           Rscript -e 'install.packages("rextendr")'
-          Rscript -e 'rextendr::vendor_pkgs(".")'
+          Rscript -e 'rextendr::vendor_crates(".")'
           R CMD build .
       - uses: softprops/action-gh-release@v3
         with:

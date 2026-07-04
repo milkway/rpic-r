@@ -6,6 +6,10 @@
 \usage{
 rpic_register_knitr()
 }
+\value{
+No return value; called for its side effect of registering the
+\code{rpic} engine with \link[knitr:knit_engines]{knitr::knit_engines}.
+}
 \description{
 Register the rpic knitr engine
 }

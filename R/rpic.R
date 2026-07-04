@@ -95,6 +95,8 @@ rpic_manifest <- function(src, circuits = FALSE, texlabels = FALSE) {
 #' ````
 #' Chunk options: `circuits`, `texlabels`, `scale`.
 #' @param options knitr chunk options.
+#' @return The chunk output produced by [knitr::engine_output()] (the rendered
+#'   diagram as an included figure).
 #' @export
 rpic_knitr_engine <- function(options) {
   src <- paste(options$code, collapse = "\n")
@@ -108,6 +110,8 @@ rpic_knitr_engine <- function(options) {
 }
 
 #' Register the rpic knitr engine
+#' @return No return value; called for its side effect of registering the
+#'   `rpic` engine with [knitr::knit_engines].
 #' @export
 rpic_register_knitr <- function() {
   knitr::knit_engines$set(rpic = rpic_knitr_engine)
