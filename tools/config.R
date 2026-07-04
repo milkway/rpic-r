@@ -109,11 +109,28 @@ if (file.exists(mv_ofp)) {
   invisible(file.remove(mv_ofp))
 }
 
+# CRAN builds must use the pre-generated R/extendr-wrappers.R shipped in
+# the tarball instead of regenerating it at install time: the `document`
+# bin recompiles proc-macro2/quote in the debug profile, and their build
+# scripts hit a spurious "os error 193" on CRAN's Windows builder (seen on
+# the 0.6.2 pretest and reproduced on win-builder even with the offline
+# vendored build). Developers still regenerate wrappers on NOT_CRAN builds.
+.document_run <- if (is_not_cran) {
+  if (is_windows) {
+    "cargo run @CRAN_FLAGS@ --bin document --target $(TARGET) --manifest-path=./rust/Cargo.toml --target-dir $(TARGET_DIR)"
+  } else {
+    "cargo run @CRAN_FLAGS@ --bin document --manifest-path=./rust/Cargo.toml --target-dir $(TARGET_DIR) @TARGET@"
+  }
+} else {
+  "echo 'Building for CRAN: using the pre-generated extendr wrappers.'"
+}
+
 # read as a single string
 mv_txt <- readLines(mv_fp)
 
 # replace placeholder values
-new_txt <- gsub("@CRAN_FLAGS@", .cran_flags, mv_txt) |>
+new_txt <- gsub("@DOCUMENT_RUN@", .document_run, mv_txt) |>
+  gsub("@CRAN_FLAGS@", .cran_flags, x = _) |>
   gsub("@PROFILE@", .profile, x = _) |>
   gsub("@CLEAN_TARGET@", .clean_targets, x = _) |>
   gsub("@LIBDIR@", .libdir, x = _) |>
