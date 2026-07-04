@@ -3,10 +3,11 @@
 # NOT_CRAN allows the online (non-vendored) cargo build.
 name: pkgdown
 
+# main-push deploys only: the github-pages environment rejects tag deploys
+# (protection rules), and a release tag always coincides with main anyway.
 on:
   push:
     branches: [main]
-    tags: ["v*"]
   workflow_dispatch:
 
 permissions:
