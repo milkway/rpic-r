@@ -11,7 +11,9 @@ R bindings to rpic, a Rust reimplementation of the pic picture-drawing language,
 \seealso{
 Useful links:
 \itemize{
+  \item \url{https://github.com/milkway/rpic-r}
   \item \url{https://github.com/milkway/rpic-lang}
+  \item Report bugs at \url{https://github.com/milkway/rpic-r/issues}
 }
 
 }

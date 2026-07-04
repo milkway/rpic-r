@@ -1,7 +1,7 @@
 [package]
 name = 'rpic'
 publish = false
-version = '0.1.0'
+version = '0.6.1'
 edition = '2024'
 rust-version = '1.85'
 
@@ -15,8 +15,8 @@ path = 'document.rs'
 
 [dependencies]
 extendr-api = '*'
-rpic-core = "0.1.0"
-rpic-render = "0.1.0"
+rpic-core = "0.6.1"
+rpic-render = "0.6.1"
 
 [profile.release]
 lto = true

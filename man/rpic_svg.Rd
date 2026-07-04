@@ -4,12 +4,16 @@
 \alias{rpic_svg}
 \title{Render pic source to an SVG string}
 \usage{
-rpic_svg(src, circuits = FALSE)
+rpic_svg(src, circuits = FALSE, texlabels = FALSE)
 }
 \arguments{
 \item{src}{pic source code.}
 
-\item{circuits}{load the native circuit-element library.}
+\item{circuits}{load the native circuit-element library (or write
+\verb{copy "circuits"} in the source itself).}
+
+\item{texlabels}{typeset fully \verb{$...$}-delimited labels as TeX math
+(initializer only — the source can still set \code{texlabels = 0}).}
 }
 \value{
 an SVG string.
@@ -17,6 +21,22 @@ an SVG string.
 \description{
 Render pic source to an SVG string
 }
+\section{Errors}{
+
+Compile errors are raised as a classed \code{rpic_error} condition whose
+\code{info} field holds the structured diagnostic (\code{message}, \code{line}, \code{col},
+\code{end_col}, \code{file}, \code{kind}, \code{found}, \code{expected}, \code{hint}; absent values are
+\code{NA}, and \code{file} names a \code{copy} include — \code{NA} means your own input).
+Positions are relative to your own source, even with \code{circuits = TRUE}:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{tryCatch(
+  rpic_svg("bxo", circuits = TRUE),
+  rpic_error = function(e) e$info$hint  # "did you mean `box`?"
+)
+}\if{html}{\out{</div>}}
+}
+
 \examples{
 rpic_svg('box "hi"; arrow; circle "x"')
+tryCatch(rpic_svg("bxo"), rpic_error = function(e) e$info$line)
 }
