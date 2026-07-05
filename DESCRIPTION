@@ -2,7 +2,8 @@ Package: rpic
 Title: The 'pic' Graphics Language Rendered to SVG, PNG and PDF
 Version: 0.6.2
 Authors@R: c(
-    person("André", "Leite", email = "leite@castlab.org", role = c("aut", "cre", "cph")),
+    person("André", "Leite", email = "leite@castlab.org", role = c("aut", "cre", "cph"),
+           comment = c(ORCID = "0000-0002-4718-9766")),
     person("The authors of the dependency Rust crates", role = "cph",
            comment = "see inst/AUTHORS for details")
   )
