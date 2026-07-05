@@ -13,3 +13,6 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^CRAN-SUBMISSION$
+^CLAUDE\.md$
+^AGENTS\.md$
+^rpic_[0-9].*\.tar\.gz$
