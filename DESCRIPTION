@@ -1,6 +1,6 @@
 Package: rpic
 Title: The 'pic' Graphics Language Rendered to SVG, PNG and PDF
-Version: 0.6.2
+Version: 0.11.3
 Authors@R: c(
     person("André", "Leite", email = "leite@castlab.org", role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0000-0002-4718-9766")),
@@ -17,7 +17,7 @@ Description: Renders diagrams written in the 'pic' picture-drawing language
 License: BSD_2_clause + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-SystemRequirements: Cargo (Rust's package manager), rustc
+SystemRequirements: Cargo (Rust's package manager), rustc (>= 1.88.0)
 Suggests:
     knitr,
     rmarkdown

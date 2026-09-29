@@ -69,10 +69,13 @@ rpic_pdf <- function(src, file, circuits = FALSE, texlabels = FALSE) {
 
 #' Compile to a JSON bundle (as a string)
 #'
-#' Returns `{svg, animations, diagnostics, warnings}` — `warnings` carries
-#' structured compiler warnings for accepted-but-ignored input (unknown
+#' Returns `{svg, animations, diagnostics, warnings, objects}` — `warnings`
+#' carries structured compiler warnings for accepted-but-ignored input (unknown
 #' attribute words, unknown `animate` effects), each with the same fields as
-#' the `rpic_error` diagnostic. On a pic error the JSON is
+#' the `rpic_error` diagnostic. `objects` lists every drawn object: its SVG
+#' `id` (`"s0"`, `"s1"`, ...), `kind`, bounding box in viewBox units and
+#' source position. An `interactions` array is added when the source marks
+#' objects `draggable`. On a pic error the JSON is
 #' `{error, error_info}` instead (no condition is raised — the error travels
 #' in-band).
 #' @inheritParams rpic_svg

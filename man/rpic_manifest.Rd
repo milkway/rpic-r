@@ -19,10 +19,13 @@ rpic_manifest(src, circuits = FALSE, texlabels = FALSE)
 a JSON string; parse with e.g. \code{jsonlite::fromJSON()}.
 }
 \description{
-Returns \verb{\{svg, animations, diagnostics, warnings\}} — \code{warnings} carries
-structured compiler warnings for accepted-but-ignored input (unknown
+Returns \verb{\{svg, animations, diagnostics, warnings, objects\}} — \code{warnings}
+carries structured compiler warnings for accepted-but-ignored input (unknown
 attribute words, unknown \code{animate} effects), each with the same fields as
-the \code{rpic_error} diagnostic. On a pic error the JSON is
+the \code{rpic_error} diagnostic. \code{objects} lists every drawn object: its SVG
+\code{id} (\code{"s0"}, \code{"s1"}, ...), \code{kind}, bounding box in viewBox units and
+source position. An \code{interactions} array is added when the source marks
+objects \code{draggable}. On a pic error the JSON is
 \verb{\{error, error_info\}} instead (no condition is raised — the error travels
 in-band).
 }
