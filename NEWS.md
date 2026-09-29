@@ -1,3 +1,30 @@
+# rpic 0.11.3
+
+Tracks the rpic engine from 0.6.2 to 0.11.3. The R functions and their
+arguments are unchanged; everything below is reached through the pic source.
+
+* New pic extensions, all opt-in: `canvas` (fixed page), per-string font
+  attributes (`bold`, `italic`, `mono`, `font`, `fontsize`, `big`, `small`),
+  `rotated` and `aligned` labels, colour literals `rgb(r, g, b)` and
+  `0xRRGGBB`, variables and expressions in colour position, `thin`, and
+  `link "<url>"` for clickable objects in SVG output.
+* `animate` grew from three effects to a full set: `move`, `highlight`,
+  `slide`, `morph`, `type`, `scramble` and `wiggle`, plus `out`, `repeat`,
+  `yoyo`, `ease`, `stagger`, a partial `draw from ... to ...`, and
+  `draggable` objects.
+* `rpic_manifest()` bundles gain an `objects` array (id, kind, bounding box
+  and source position of every drawn object) and, when `draggable` is used,
+  an `interactions` array.
+* Better compatibility with 'dpic': extension words such as `after`,
+  `repeat` and `previous` no longer shadow identifiers, so sources that use
+  them as variable or macro names compile.
+* Recursive macro expansion is no longer exponential in its depth.
+* Robustness: deeply nested input is rejected with a diagnostic instead of
+  overflowing the stack, and `invalid_color` warnings carry a source
+  position.
+* Rust 1.88 or later is now required to build from source
+  (`SystemRequirements`).
+
 # rpic 0.6.2
 
 * Track rpic 0.6.2 (the 2026-07 audit series): always-valid SVG for negative

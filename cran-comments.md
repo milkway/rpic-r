@@ -1,35 +1,21 @@
-# CRAN comments — rpic 0.6.2 (resubmission)
+# CRAN comments — rpic 0.11.3 (update)
 
-## Changes since the 2026-07-05 pretest
+This is an update of rpic 0.6.2 (on CRAN since 2026-07-15, all check flavors
+OK). It tracks the upstream engine from 0.6.2 to 0.11.3; the R API is
+unchanged. See NEWS.md.
 
-The pretest failures traced to one process error on our side: the submitted
-tarball was built **without the vendored Rust sources**, so cargo downloaded
-crates (Debian WARNING "Downloads Rust crates"), built with unbounded
-parallelism (Debian NOTE, CPU 6.7x elapsed) and failed on Windows during
-that online build. Fixed structurally:
-
-* `tools/config.R` now **fails closed**: a CRAN build without
-  `src/rust/vendor.tar.xz` stops with a clear error, so this class of
-  submission cannot happen again. `-j 2 --offline` is always applied for
-  CRAN builds.
-* With the offline vendored build in place, the Rust library compiles
-  cleanly on win-builder. A residual spurious failure remained in the
-  optional wrapper-regeneration step (`cargo run --bin document`, debug
-  profile); CRAN builds now **skip wrapper regeneration entirely** and use
-  the pre-generated `R/extendr-wrappers.R` shipped in the tarball
-  (developers still regenerate under `NOT_CRAN`).
-* This tarball ships the vendored sources and was verified on win-builder
-  (R-devel) before resubmission.
-
-About the "possibly misspelled words" NOTE: *Kernighan* is a proper name
-(Brian W. Kernighan, the author of pic); *natively* and *reimplementation*
-are intended English words.
+* The engine now uses Rust `let` chains, so the minimum Rust version rises
+  to 1.88. `SystemRequirements` states `rustc (>= 1.88.0)` and
+  `tools/msrv.R` enforces it at configure time. The CRAN check machines
+  currently report rustc 1.92 to 1.98.
+* `inst/AUTHORS` is regenerated from the new dependency graph
+  (`data-raw/authors.R`, 181 crates).
 
 ## R CMD check results
 
 0 errors | 0 warnings | 1 note
 
-* New submission.
+* Size of tarball: 15.7 MB, from the vendored Rust sources (see below).
 
 ## Rust code (CRAN policy compliance)
 
@@ -51,14 +37,14 @@ The package statically links compiled Rust code via the extendr framework:
 
 ## Package size
 
-The source tarball exceeds the usual size guideline because of the vendored
-Rust sources (`src/rust/vendor.tar.xz`), which the CRAN Rust policy requires
+The source tarball (15.7 MB; 0.6.2 was 13.9 MB) exceeds the usual size
+guideline because of the vendored Rust sources (`src/rust/vendor.tar.xz`), which the CRAN Rust policy requires
 for offline builds. The vendored archive is xz-compressed and contains only
 crate sources.
 
 ## Test environments
 
 * local macOS (R 4.6, rustc stable)
-* win-builder R-devel (offline vendored build)
+* win-builder R-devel (offline vendored build), before submission
 * GitHub Actions ubuntu-latest (R release, rustc stable) — R CMD check runs
   against the vendored, offline build on every push/PR.

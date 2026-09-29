@@ -1,9 +1,9 @@
 [package]
 name = 'rpic'
 publish = false
-version = '0.6.2'
+version = '0.11.3'
 edition = '2024'
-rust-version = '1.85'
+rust-version = '1.88'
 
 [lib]
 crate-type = [ 'rlib', 'staticlib' ]
@@ -15,8 +15,8 @@ path = 'document.rs'
 
 [dependencies]
 extendr-api = '*'
-rpic-core = "0.6.2"
-rpic-render = "0.6.2"
+rpic-core = "0.11.3"
+rpic-render = "0.11.3"
 
 [profile.release]
 lto = true
