@@ -1,14 +1,15 @@
-# CRAN comments — rpic 0.11.3 (update)
+# CRAN comments — rpic 0.12.1 (update)
 
-This is an update of rpic 0.6.2 (on CRAN since 2026-07-15, all check flavors
-OK). It tracks the upstream engine from 0.6.2 to 0.11.3; the R API is
-unchanged. See NEWS.md.
+This is an update of rpic 0.11.3 (on CRAN since 2026-10-01). It tracks the
+upstream engine from 0.11.3 to 0.12.1 and adds one exported function,
+`rpic_scene()` (the engine's device-independent draw-list export). See
+NEWS.md.
 
-* The engine now uses Rust `let` chains, so the minimum Rust version rises
-  to 1.88. `SystemRequirements` states `rustc (>= 1.88.0)` and
-  `tools/msrv.R` enforces it at configure time. The CRAN check machines
-  currently report rustc 1.92 to 1.98.
-* `inst/AUTHORS` is regenerated from the new dependency graph
+* Rendering is byte-identical to 0.11.3 over the engine's whole example
+  corpus — the new engine line adds an opt-in export, not behavior changes.
+* The minimum Rust version stays 1.88 (`SystemRequirements:
+  rustc (>= 1.88.0)`, enforced at configure time by `tools/msrv.R`).
+* `inst/AUTHORS` is regenerated from the refreshed dependency graph
   (`data-raw/authors.R`, 181 crates).
 
 ## R CMD check results

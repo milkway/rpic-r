@@ -110,6 +110,30 @@ fn rpic_manifest_(src: &str, circuits: bool, texlabels: bool) -> String {
     rpic_core::compile_json_with_options(src, &opts(circuits, texlabels))
 }
 
+// The scene export (engine docs/scene.md): the resolved draw list as
+// versioned, device-independent JSON. `flatten <= 0` keeps the cubic
+// Béziers (the C-ABI convention); `> 0` delivers polylines within that
+// tolerance in inches. Success = `list(value = <json>, warnings = <list>)`
+// — the scene's own `scene_unsupported` diagnostics ride `warnings` so the
+// R wrapper can surface them (never silent). (Plain `//` on purpose: `///`
+// would become roxygen on the generated wrapper and document an internal.)
+#[extendr]
+fn rpic_scene_(src: &str, circuits: bool, texlabels: bool, flatten: f64, outline: bool) -> List {
+    ensure_math_renderer();
+    let sopts = rpic_core::SceneOptions {
+        flatten: Some(flatten).filter(|f| f.is_finite() && *f > 0.0),
+        outline,
+        source: None,
+    };
+    match rpic_core::compile_scene_with_options(src, &opts(circuits, texlabels), &sopts) {
+        Ok(out) => {
+            let warnings: Vec<Robj> = out.warnings.iter().map(|w| info_list(w).into()).collect();
+            list!(value = out.json, warnings = List::from_values(warnings))
+        }
+        Err(e) => fail(&e.message, Some(&e.info)),
+    }
+}
+
 // Macro to generate exports.
 extendr_module! {
     mod rpic;
@@ -117,4 +141,5 @@ extendr_module! {
     fn rpic_png_;
     fn rpic_pdf_;
     fn rpic_manifest_;
+    fn rpic_scene_;
 }

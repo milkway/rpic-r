@@ -87,6 +87,57 @@ rpic_manifest <- function(src, circuits = FALSE, texlabels = FALSE) {
   rpic_manifest_(src, circuits, texlabels)
 }
 
+#' Compile to the scene JSON (the resolved draw list)
+#'
+#' The scene is the engine's device-independent output (format 1, see
+#' `docs/scene.md` in the engine repository): the fully resolved draw list —
+#' final geometry in inches (y-up), curves as cubic Béziers, style as
+#' descriptors with colors resolved to hex, text as text with baseline
+#' anchor points, every variable's final value under `vars`, and items in
+#' draw order carrying the same stable `s<N>` ids as the SVG. Use it to
+#' build your own backend (maps, TikZ, editors) on top of rpic's layout.
+#'
+#' Anything the SVG paints that the scene cannot represent is reported as an
+#' R `warning()` (engine kind `scene_unsupported`) — never silently dropped.
+#' @inheritParams rpic_svg
+#' @param flatten optional tolerance in inches: deliver every curve as a
+#'   polyline within this distance of the exact cubics (`NULL` keeps the
+#'   Béziers).
+#' @param outline embed typeset TeX math as self-contained SVG glyph
+#'   fragments (`outline` keys) instead of metrics-only entries.
+#' @return a JSON string; parse with e.g. `jsonlite::fromJSON()`.
+#' @section Errors:
+#' Compile errors raise the same classed `rpic_error` condition as
+#' [rpic_svg()].
+#' @examples
+#' scene <- rpic_scene('geo_lon = -34.88
+#' B: box "hub"
+#' arrow right from B.e')
+#' if (requireNamespace("jsonlite", quietly = TRUE)) {
+#'   s <- jsonlite::fromJSON(scene, simplifyVector = FALSE)
+#'   s$vars$geo_lon      # -34.88
+#'   s$items[[2]]$kind   # "arrow"
+#' }
+#' @export
+rpic_scene <- function(src, flatten = NULL, outline = FALSE,
+                       circuits = FALSE, texlabels = FALSE) {
+  flat <- 0
+  if (!is.null(flatten)) {
+    if (!is.numeric(flatten) || length(flatten) != 1 || !is.finite(flatten) || flatten <= 0) {
+      stop("`flatten` must be a single positive finite tolerance in inches")
+    }
+    flat <- as.numeric(flatten)
+  }
+  res <- rpic_scene_(src, circuits, texlabels, flat, isTRUE(outline))
+  for (w in res$warnings) {
+    warning(structure(
+      class = c("rpic_warning", "warning", "condition"),
+      list(message = w$message, call = sys.call(), info = w)
+    ))
+  }
+  .rpic_value(res)
+}
+
 #' knitr engine for ```{rpic}``` chunks
 #'
 #' Register with [rpic_register_knitr()], then write pic code in a chunk:

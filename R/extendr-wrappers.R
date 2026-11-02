@@ -13,4 +13,6 @@ rpic_pdf_ <- function(src, file, circuits, texlabels) .Call(wrap__rpic_pdf_, src
 
 rpic_manifest_ <- function(src, circuits, texlabels) .Call(wrap__rpic_manifest_, src, circuits, texlabels)
 
+rpic_scene_ <- function(src, circuits, texlabels, flatten, outline) .Call(wrap__rpic_scene_, src, circuits, texlabels, flatten, outline)
+
 # nolint end
