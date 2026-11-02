@@ -24,6 +24,10 @@ reference:
     desc: The full compile bundle — SVG, animation manifest, diagnostics and warnings.
     contents:
       - rpic_manifest
+  - title: Scene export
+    desc: The resolved draw list as device-independent JSON — build your own backend.
+    contents:
+      - rpic_scene
   - title: knitr / Quarto
     desc: Inline pic diagrams in R Markdown and Quarto chunks.
     contents:
@@ -32,6 +36,8 @@ reference:
 
 news:
   releases:
+    - text: rpic 0.12.1
+      href: https://github.com/milkway/rpic-r/releases/tag/v0.12.1
     - text: rpic 0.11.3
       href: https://github.com/milkway/rpic-r/releases/tag/v0.11.3
     - text: rpic 0.6.1
