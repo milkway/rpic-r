@@ -1,3 +1,20 @@
+# rpic 0.12.1
+
+Tracks the rpic engine from 0.11.3 to 0.12.1 and adds one function.
+
+* New `rpic_scene()`: the engine's **scene output** — the resolved draw list
+  as versioned, device-independent JSON (final geometry in inches, curves as
+  cubic Béziers or `flatten`ed polylines, style descriptors with hex colors,
+  text with baseline anchors, every variable's final value under `vars`, and
+  items in draw order carrying the SVG's stable `s<N>` ids). Parse it with
+  `jsonlite::fromJSON()` and build map layers, TikZ output or editors on top
+  of rpic's layout. Anything the SVG paints that the scene cannot represent
+  raises a classed `rpic_warning` (engine kind `scene_unsupported`).
+* Engine updates reaching R users: the whole corpus renders byte-identically
+  to 0.11.3 (the 0.12.x line's changes are the opt-in scene export plus
+  packaging); dependency refreshes (resvg 0.49, RaTeX 0.1.15) are likewise
+  output-identical.
+
 # rpic 0.11.3
 
 Tracks the rpic engine from 0.6.2 to 0.11.3. The R functions and their
