@@ -270,9 +270,9 @@ dependencies = [
 
 [[package]]
 name = "flate2"
-version = "1.1.10"
+version = "1.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e634e2e0ebac1ee034020da1ca582e17ffe4e0f5e985823721e168928136dcb"
+checksum = "626d4928326b646e70f65ed36fc7cf9f206bdb68a0019ee7c6b4709da4e084c4"
 dependencies = [
  "crc32fast",
  "miniz_oxide 0.9.1",
@@ -540,9 +540,9 @@ dependencies = [
 
 [[package]]
 name = "mime"
-version = "0.3.17"
+version = "0.3.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6877bb514081ee2a7ff5ef9de3281f14a4dd4bceac4c09388074a6b5df8a139a"
+checksum = "d5848f5a9e8117cf94f2f90faac24a87ff81600ff8628c1e3deaab572e76bfa1"
 
 [[package]]
 name = "mime_guess"
@@ -964,7 +964,7 @@ dependencies = [
  "log",
  "pico-args",
  "rgb",
- "svgtypes 0.16.1",
+ "svgtypes 0.16.2",
  "tiny-skia 0.12.0",
  "usvg 0.49.0",
  "zune-jpeg 0.5.15",
@@ -996,7 +996,7 @@ dependencies = [
 
 [[package]]
 name = "rpic"
-version = "0.11.3"
+version = "0.13.0"
 dependencies = [
  "extendr-api",
  "rpic-core",
@@ -1005,15 +1005,15 @@ dependencies = [
 
 [[package]]
 name = "rpic-core"
-version = "0.12.1"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34610728e912cc5f4269d3abfda612481cd7eea010417144069d6dd9461881c5"
+checksum = "e9b6d08a0fa4bc5ea52d2639c7354c5046f5c8d24d0da18fd304460fbbe0fa3e"
 
 [[package]]
 name = "rpic-render"
-version = "0.12.1"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05806eeaab69eb89f9b97c9d33860bdfd51e8ce10d89eb8d9dfe238f3f092cb7"
+checksum = "2db8d0874fcbac746df133f843c29a43b05925df0b8384bd6f32b06049c005af"
 dependencies = [
  "ratex-layout",
  "ratex-parser",
@@ -1273,9 +1273,9 @@ dependencies = [
 
 [[package]]
 name = "svgtypes"
-version = "0.16.1"
+version = "0.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "695b5790b3131dafa99b3bbfd25a216edb3d216dad9ca208d4657bfb8f2abc3d"
+checksum = "9f12b12995e3638c70618c1facb1ce65302f6a6f706b675f07c58a5d7391120e"
 dependencies = [
  "kurbo 0.13.1",
  "siphasher",
@@ -1520,7 +1520,7 @@ dependencies = [
  "siphasher",
  "skrifa 0.44.0",
  "strict-num",
- "svgtypes 0.16.1",
+ "svgtypes 0.16.2",
  "tiny-skia-path 0.12.0",
  "unicode-bidi",
  "unicode-script",
