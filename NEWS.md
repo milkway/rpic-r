@@ -1,3 +1,19 @@
+# rpic (development version)
+
+Tracks the rpic engine 0.13.0 (vendored crates `rpic-core`/`rpic-render`
+0.13.0). The R functions and their arguments are unchanged; rendering is
+byte-identical to 0.12.1 over the engine's whole corpus. What reaches R users
+through the pic source and the JSON outputs:
+
+* `rpic_scene()` gains a top-level `places` array — every `Label: position`
+  statement as a named point in scene units, with its enclosing block and
+  source span — and block items carry `span` (the outermost macro call that
+  produced the block, or its `[`) and `call` (`name`, `args`). The scene
+  format version stays 1 (additive).
+* troff requests (a line with `.` in column 1 other than `.PS`/`.PE`, e.g.
+  `.ft B`) are set aside as classic pic and dpic do instead of failing to
+  parse.
+
 # rpic 0.12.1
 
 Tracks the rpic engine from 0.11.3 to 0.12.1 and adds one function.
