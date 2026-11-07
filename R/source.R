@@ -150,7 +150,8 @@ pic <- function(src, circuits = NULL, texlabels = NULL) {
   } else if (!is.character(src) || length(src) != 1 || is.na(src)) {
     stop("`src` must be pic source: a pic() object or a single string", call. = FALSE)
   }
-  list(src = src, circuits = isTRUE(circuits), texlabels = isTRUE(texlabels))
+  list(src = src, circuits = .flag(circuits, "circuits", FALSE),
+       texlabels = .flag(texlabels, "texlabels", FALSE))
 }
 
 #' @rdname pic

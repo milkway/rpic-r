@@ -60,6 +60,11 @@ test_that("an rpic_source's options are the rpic_*() defaults", {
   expect_identical(as.character(rpic_geojson(pic(geo))),
                    as.character(rpic_geojson(geo, circuits = TRUE)))
   expect_error(rpic_svg(c("box", "arrow")), "single string")
+  # explicit flags are validated, not read as FALSE
+  expect_error(rpic_svg("box", circuits = NA), "`circuits` must be TRUE, FALSE or NULL")
+  expect_error(rpic_svg(pic("box"), texlabels = "TRUE"), "`texlabels` must be")
+  expect_error(rpic_compile("box", circuits = c(TRUE, FALSE)), "`circuits` must be")
+  expect_error(rpic_geojson("geo_lon = 0; geo_lat = 0\nbox", circuits = 1), "`circuits` must be")
 })
 
 test_that("format() and print() summarise the source", {
