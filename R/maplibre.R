@@ -183,7 +183,19 @@ rpic_mapgl <- function(map, x, ..., fit = TRUE) {
     return(x)
   }
   if (is.character(x) && length(x) == 1 && !is.na(x)) {
-    return(rpic_geojson(x, ...))
+    # report the caller's call (`rpic_maplibre_layers("box")`), not ours
+    return(withCallingHandlers(
+      rpic_geojson(x, ...),
+      rpic_error = function(e) {
+        if (!is.null(call)) e$call <- call
+        stop(e)
+      },
+      rpic_geo_warning = function(w) {
+        if (!is.null(call)) w$call <- call
+        warning(w)
+        invokeRestart("muffleWarning")
+      }
+    ))
   }
   stop(paste0(
     "`x` must be an rpic_geojson() result, an rpic_sf() result or pic source ",

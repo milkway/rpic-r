@@ -83,6 +83,26 @@ test_that("pic source and rpic_sf() input give the same layers", {
   expect_identical(as.character(attr(x, "geojson")), as.character(rpic_geojson(src)))
 })
 
+test_that("conditions from pic source report the caller's call", {
+  err <- tryCatch(rpic_maplibre_layers("box"), rpic_geo_error = function(e) e)
+  expect_identical(err$call, quote(rpic_maplibre_layers("box")))
+  err <- tryCatch(rpic_maplibre_layers("geo_lon = 0; geo_lat = 0\nbox wid"),
+                  rpic_error = function(e) e)
+  expect_identical(err$call[[1]], quote(rpic_maplibre_layers))
+  src <- "geo_lon = 0; geo_lat = 0\nbox gradient \"red\" \"blue\""
+  w <- tryCatch(rpic_maplibre_layers(src), rpic_geo_warning = function(w) w)
+  expect_s3_class(w, "rpic_warning")
+  expect_identical(w$call[[1]], quote(rpic_maplibre_layers))
+  # the warning is raised once and the layers still come back
+  ws <- list()
+  layers <- withCallingHandlers(rpic_maplibre_layers(src), rpic_geo_warning = function(w) {
+    ws[[length(ws) + 1]] <<- w
+    invokeRestart("muffleWarning")
+  })
+  expect_length(layers, 6)
+  expect_length(ws, 1)
+})
+
 test_that("invalid input errors", {
   bad <- structure('{"type":"Feature"}', class = "json")
   err <- tryCatch(rpic_maplibre_layers(bad), rpic_geo_error = function(e) e)
