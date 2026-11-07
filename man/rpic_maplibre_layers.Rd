@@ -7,8 +7,11 @@
 rpic_maplibre_layers(x, ...)
 }
 \arguments{
-\item{x}{the drawing: the result of \code{\link[=rpic_geojson]{rpic_geojson()}} (any GeoJSON
-FeatureCollection text of class \code{"json"} will do), an \code{sf} data frame
+\item{x}{the drawing: the result of \code{\link[=rpic_geojson]{rpic_geojson()}} (or any GeoJSON
+FeatureCollection text: a string of class \code{"json"}, or one whose first
+non-blank character is an opening brace or bracket — so pic source that
+opens with a brace group needs a statement or comment before it), an
+\code{sf} data frame
 from \code{\link[=rpic_sf]{rpic_sf()}} (its \code{"geojson"} attribute, the engine's own text, is
 used — not its rows, so an \code{sf} that has lost rows since is an error and
 edited columns are not seen), or pic source code, which is

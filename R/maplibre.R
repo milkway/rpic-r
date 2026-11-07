@@ -23,8 +23,11 @@
 #' engine's GeoJSON, not a re-serialised `sf` data frame (whose columns are
 #' `geopic.kind`, ...). [rpic_mapgl()] takes care of that.
 #'
-#' @param x the drawing: the result of [rpic_geojson()] (any GeoJSON
-#'   FeatureCollection text of class `"json"` will do), an `sf` data frame
+#' @param x the drawing: the result of [rpic_geojson()] (or any GeoJSON
+#'   FeatureCollection text: a string of class `"json"`, or one whose first
+#'   non-blank character is an opening brace or bracket — so pic source that
+#'   opens with a brace group needs a statement or comment before it), an
+#'   `sf` data frame
 #'   from [rpic_sf()] (its `"geojson"` attribute, the engine's own text, is
 #'   used — not its rows, so an `sf` that has lost rows since is an error and
 #'   edited columns are not seen), or pic source code, which is
@@ -164,6 +167,13 @@ rpic_mapgl <- function(map, x, ..., fit = TRUE) {
     }
     attr(gj, "n_features") <- NULL
     return(gj)
+  }
+  # unclassed GeoJSON text (read from a file, or as.character() of a result)
+  # starts with `{` (or `[`); pic source would only do so by opening with a
+  # `{ ... }` group (documented: put any statement before it)
+  if (is.character(x) && !inherits(x, "json") && length(x) == 1 && !is.na(x) &&
+      grepl("^[{[]", trimws(x))) {
+    x <- structure(x, class = "json")
   }
   if (inherits(x, "json")) {
     not_source()

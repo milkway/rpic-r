@@ -72,6 +72,10 @@ test_that("pic source and rpic_sf() input give the same layers", {
   # `...` reaches rpic_geojson()
   expect_identical(rpic_maplibre_layers("box", anchor = c(-34.9, -8.1), scale = 400),
                    rpic_maplibre_layers(rpic_geojson("box", anchor = c(-34.9, -8.1), scale = 400)))
+  # unclassed GeoJSON text is the collection, not pic source
+  expect_identical(rpic_maplibre_layers(as.character(rpic_geojson(src))), want)
+  expect_identical(rpic_maplibre_layers(paste0("\n  ", as.character(rpic_geojson(src)))), want)
+  expect_error(rpic_maplibre_layers('{"type":"Feature"}'), class = "rpic_geo_error")
   skip_if_not_installed("sf")
   x <- rpic_sf(src)
   expect_identical(rpic_maplibre_layers(x), want)
