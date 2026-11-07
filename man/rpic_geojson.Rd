@@ -78,7 +78,8 @@ Straight segments are densified in the plane before they are carried to
 longitude/latitude (no step longer than 100 m), so a circle of radius
 2 km is a geodesic circle, not a circle in degree space. Each drawn object
 becomes one or more features (boxes and circles polygons, lines line
-strings, dots and text points, arrowheads separate features) whose
+strings, dots and text points, arrowheads separate features, and a shape
+with text an extra \code{title} point at the text's centre) whose
 properties are the simplestyle keys (\code{stroke}, \code{stroke-width}, \code{fill},
 \code{stroke-opacity}, \code{fill-opacity}, \code{title}) and the \verb{geopic:} namespace
 (\code{geopic:id}, \code{geopic:kind}, \code{geopic:text}, \code{geopic:placement}, ...);

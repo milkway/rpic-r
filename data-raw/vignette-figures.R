@@ -144,8 +144,9 @@ if (requireNamespace("sf", quietly = TRUE) && requireNamespace("ggplot2", quietl
   # every pic colour is already a hex string: identity scales draw the
   # drawing as drawn; text features are labels, not markers
   pic_layers <- function(x) {
-    shapes <- x[x$geopic.kind != "text", ]
-    labels <- x[!is.na(x$geopic.text), ]
+    # text and shape titles (engine 0.15.1: a point at the text's centre)
+    shapes <- x[!x$geopic.kind %in% c("text", "title"), ]
+    labels <- x[x$geopic.kind %in% c("text", "title"), ]
     list(
       geom_sf(data = shapes, aes(fill = fill, colour = stroke), linewidth = 0.4),
       geom_sf_text(data = labels, aes(label = geopic.text), size = 3),

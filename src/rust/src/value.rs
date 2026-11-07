@@ -9,15 +9,30 @@ use extendr_api::prelude::*;
 use serde_json::Value;
 
 pub fn to_robj(v: &Value) -> Robj {
+    convert(v, 1)
+}
+
+// The same, for values R hands back to a JSON serialiser (MapLibre layer
+// specs on their way to mapgl/htmlwidgets, which use `auto_unbox = TRUE`):
+// an array becomes an atomic vector only when it has two or more elements,
+// so a one-element array (`["zoom"]`, `["geometry-type"]`) stays a list and
+// is written back as an array, not unboxed to a scalar.
+pub fn to_robj_arrays(v: &Value) -> Robj {
+    convert(v, 2)
+}
+
+// `min_atomic` (>= 1, so `[]` is always `list()`): the shortest homogeneous
+// array that becomes an atomic vector.
+fn convert(v: &Value, min_atomic: usize) -> Robj {
     match v {
         Value::Null => r!(NA_LOGICAL),
         Value::Bool(b) => r!(*b),
         Value::Number(n) => r!(n.as_f64().unwrap_or(f64::NAN)),
         Value::String(s) => r!(s.as_str()),
-        Value::Array(a) => array(a),
+        Value::Array(a) => array(a, min_atomic),
         Value::Object(m) => {
             let names: Vec<&str> = m.keys().map(String::as_str).collect();
-            let values: Vec<Robj> = m.values().map(to_robj).collect();
+            let values: Vec<Robj> = m.values().map(|x| convert(x, min_atomic)).collect();
             match List::from_names_and_values(names, values) {
                 Ok(l) => l.into(),
                 Err(_) => r!(NULL),
@@ -26,9 +41,9 @@ pub fn to_robj(v: &Value) -> Robj {
     }
 }
 
-fn array(a: &[Value]) -> Robj {
-    if a.is_empty() {
-        return List::new(0).into();
+fn array(a: &[Value], min_atomic: usize) -> Robj {
+    if a.len() < min_atomic {
+        return List::from_values(a.iter().map(|x| convert(x, min_atomic))).into();
     }
     if a.iter().all(Value::is_number) {
         let v: Vec<f64> = a.iter().map(|x| x.as_f64().unwrap_or(f64::NAN)).collect();
@@ -42,5 +57,5 @@ fn array(a: &[Value]) -> Robj {
         let v: Vec<bool> = a.iter().map(|x| x.as_bool().unwrap_or(false)).collect();
         return r!(v);
     }
-    List::from_values(a.iter().map(to_robj)).into()
+    List::from_values(a.iter().map(|x| convert(x, min_atomic))).into()
 }

@@ -32,9 +32,19 @@ one only some features carry is \code{NA} elsewhere. The geometry column is
 \code{geometry}, of mixed type (polygons for boxes and circles, line strings
 for lines and arrows, points for dots and text).
 
+A shape with text (\verb{box "Marco Zero"}) is followed by a \code{title} row: a
+point at the centre of its text, \code{geopic.kind == "title"}, \code{geopic.id}
+\code{"<id>:title"} and \code{geopic.for} naming the shape's \code{geopic.id}, carrying
+the text in \code{title} and \code{geopic.text} (engine 0.15.1; MapLibre's
+\code{pic-title} layer draws these). Filter them out
+(\code{x[x$geopic.kind != "title", ]}) to keep one row per shape.
+
 The \code{"warnings"} and \code{"registration"} attributes of \code{\link[=rpic_geojson]{rpic_geojson()}} are
 carried over (as attributes of the data frame; \code{sf} operations may drop
-them), and warnings are raised the same way.
+them), and warnings are raised the same way. The \code{"geojson"} attribute
+keeps the engine's own GeoJSON text (the \code{\link[=rpic_geojson]{rpic_geojson()}} result the data
+frame was read from), which \code{\link[=rpic_maplibre_layers]{rpic_maplibre_layers()}} and \code{\link[=rpic_mapgl]{rpic_mapgl()}}
+use instead of re-serialising the data frame.
 }
 \section{Requirements}{
 

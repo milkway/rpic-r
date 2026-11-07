@@ -252,6 +252,110 @@ fn rpic_geojson_(src: &str, circuits: bool, texlabels: bool, options_json: &str)
     }
 }
 
+// A geopic FeatureCollection (JSON text) → the MapLibre style-spec layers
+// that draw it (geopic-core `maplibre::layers_json`, docs/geopic.md § 6), as
+// an R list of named lists in draw order. One-element arrays stay lists so
+// the specs serialise back to the engine's JSON (value.rs). Failure =
+// `list(error =, info = list(kind, message, hint))`, a geo error.
+#[extendr]
+fn rpic_maplibre_layers_(fc_json: &str) -> List {
+    let internal = |msg: String| geopic_core::GeoError::new("internal", msg);
+    let layers = geopic_core::maplibre::layers_json(fc_json)
+        .and_then(|text| {
+            serde_json::from_str::<serde_json::Value>(&text)
+                .map_err(|e| internal(format!("internal: layers JSON does not parse: {e}")))
+        })
+        .and_then(|v| match v {
+            serde_json::Value::Array(a) => a
+                .iter()
+                .map(|l| layer_robj(l).map_err(internal))
+                .collect::<Result<Vec<Robj>, _>>(),
+            _ => Err(internal("internal: the layers are not a JSON array".into())),
+        });
+    match layers {
+        Ok(ls) => list!(value = List::from_values(ls)),
+        Err(e) => list!(
+            error = e.to_string(),
+            info = list!(
+                kind = e.kind.as_str(),
+                message = e.message.as_str(),
+                hint = e.hint.as_deref()
+            )
+        ),
+    }
+}
+
+// One layer spec with its keys in the style spec's reading order (`id`,
+// `type`, `source`, `filter`, `layout`, `paint`, then any other, sorted)
+// rather than serde_json's alphabetical order. A layer that is not an object
+// or cannot become a named list is an error, never an id-less layer.
+fn layer_robj(v: &serde_json::Value) -> Result<Robj, String> {
+    let m = v
+        .as_object()
+        .ok_or_else(|| "internal: a MapLibre layer is not a JSON object".to_string())?;
+    const FIRST: [&str; 6] = ["id", "type", "source", "filter", "layout", "paint"];
+    let keys: Vec<&str> = FIRST
+        .iter()
+        .copied()
+        .filter(|k| m.contains_key(*k))
+        .chain(m.keys().map(String::as_str).filter(|k| !FIRST.contains(k)))
+        .collect();
+    let values: Vec<Robj> = keys.iter().map(|k| value::to_robj_arrays(&m[*k])).collect();
+    List::from_names_and_values(keys, values)
+        .map(Into::into)
+        .map_err(|e| format!("internal: a MapLibre layer does not convert to an R list: {e:?}"))
+}
+
+// The bounding box `c(west, south, east, north)` of every position in a
+// GeoJSON FeatureCollection's geometries (for `mapgl::fit_bounds()`), or
+// `NULL` when it has none or does not parse. The geometries are the engine's
+// own output: plain lon/lat arrays, no antimeridian handling needed.
+#[extendr]
+fn rpic_geojson_bbox_(fc_json: &str) -> Robj {
+    fn walk(v: &serde_json::Value, b: &mut [f64; 4]) {
+        if let Some(a) = v.as_array() {
+            if a.len() >= 2 && a[0].is_number() && a[1].is_number() {
+                let (x, y) = (
+                    a[0].as_f64().unwrap_or(f64::NAN),
+                    a[1].as_f64().unwrap_or(f64::NAN),
+                );
+                if x.is_finite() && y.is_finite() {
+                    b[0] = b[0].min(x);
+                    b[1] = b[1].min(y);
+                    b[2] = b[2].max(x);
+                    b[3] = b[3].max(y);
+                }
+            } else {
+                a.iter().for_each(|x| walk(x, b));
+            }
+        }
+    }
+    let Ok(v) = serde_json::from_str::<serde_json::Value>(fc_json) else {
+        return r!(NULL);
+    };
+    let mut b = [
+        f64::INFINITY,
+        f64::INFINITY,
+        f64::NEG_INFINITY,
+        f64::NEG_INFINITY,
+    ];
+    for f in v
+        .get("features")
+        .and_then(|f| f.as_array())
+        .into_iter()
+        .flatten()
+    {
+        if let Some(c) = f.get("geometry").and_then(|g| g.get("coordinates")) {
+            walk(c, &mut b);
+        }
+    }
+    if b[0] <= b[2] && b[1] <= b[3] {
+        r!(b.to_vec())
+    } else {
+        r!(NULL)
+    }
+}
+
 // Macro to generate exports.
 extendr_module! {
     mod rpic;
@@ -262,4 +366,6 @@ extendr_module! {
     fn rpic_scene_;
     fn rpic_compile_;
     fn rpic_geojson_;
+    fn rpic_maplibre_layers_;
+    fn rpic_geojson_bbox_;
 }

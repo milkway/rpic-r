@@ -85,3 +85,64 @@ Like the other vignettes, `maps.Rmd` has `eval = FALSE` chunks and embeds
 figures produced by `data-raw/vignette-figures.R` (PNG via ggplot2 + sf,
 ~100 KB in total). Vignette builds stay instant and independent of sf/GDAL
 on CRAN machines.
+
+## D6 — MapLibre layers converted in Rust; one-element arrays stay lists (2026-11-07)
+
+`rpic_maplibre_layers()` calls one shim, `rpic_maplibre_layers_(fc_json)`,
+which runs `geopic_core::maplibre::layers_json()` and converts the result
+with `value.rs` (D1) — no JSON parsing in R. The layers are not read by R
+but handed back to a JSON serialiser (htmlwidgets, `auto_unbox = TRUE`), so
+the converter has a second mode, `to_robj_arrays()`: a homogeneous array
+becomes an atomic vector only from two elements up. A one-element array
+(`["zoom"]`, `["geometry-type"]`) would otherwise be a length-1 vector that
+`auto_unbox` writes as a scalar — breaking the expression in MapLibre — so
+it stays a list. The tests pin that `jsonlite::toJSON(auto_unbox = TRUE)`
+of the R layers reproduces the engine's six snapshots
+(`examples/geo/maplibre/*.layers.json`; numbers within 1e-9 relative). Each
+layer's keys come in reading order (`id`, `type`, `source`, `filter`,
+`layout`, `paint`) instead of serde_json's alphabetical order.
+
+## D7 — The map gets the engine's GeoJSON text, not a re-serialised sf (2026-11-07)
+
+The layers read the GeoJSON property names (`geopic:kind`,
+`stroke-width`) and test presence with `has` (a box without `fill` has no
+`fill` key). `mapgl::add_source()` accepts only an `sf` (or a URL) and
+re-serialises it with `geojsonsf`: the columns come out as `geopic.kind`,
+absent values as `null` (so `has` would be true and unfilled boxes would
+paint black), the dash object as a string and coordinates rounded to 9
+decimals — measured on the radius example. So:
+
+* `rpic_sf()` keeps the `rpic_geojson()` result it was read from in an
+  attribute `"geojson"` (with the row count, `n_features`), and
+  `rpic_maplibre_layers()`/`rpic_mapgl()` use that text. An `sf` whose row
+  count no longer matches is an error; edited columns are not seen
+  (documented). `[.sf` keeps the attribute, hence the row check.
+* `rpic_mapgl()` registers the source in the widget itself — the entry
+  `add_source()` would write (`id`, `type = "geojson"`, `data`,
+  `generateId = TRUE`, appended to `map$x$sources`) with the engine's text
+  as `data`, classed `"json"` so htmlwidgets writes it verbatim. That
+  relies on mapgl's widget payload shape (mapgl 0.4.6, maplibre and
+  mapboxgl widgets alike); the tests check it. Shiny proxies are refused.
+* The layers go through mapgl's generic `add_layer(map, id, type, source,
+  paint, layout, filter)` — mapgl has one, so no per-type adders and no
+  mapping of paint/layout arguments.
+* `fit = TRUE` uses `mapgl::fit_bounds()` with the bbox of the collection's
+  coordinates (computed in Rust, `rpic_geojson_bbox_()`), 48 px padding and
+  `maxZoom = 19`, the engine's JS `attach()` fit. (Without the padding the
+  callout fitted edge to edge and its box title showed twice: an engine
+  bug — the title was placed once per tile the polygon crossed — fixed in
+  engine 0.15.1 by title point features.)
+
+## D8 — The mapgl page is a pkgdown article, evaluated (2026-11-07)
+
+Unlike D5, the mapgl page runs its chunks (when mapgl is installed): the
+point is the interactive widget, which cannot be pre-rendered as a
+picture. But a self-contained widget inlines maplibre-gl and mapgl's other
+JavaScript — the rendered HTML is ~2.8 MB — and as a package vignette it
+grew the CRAN tarball from ~14 MB to 16.8 MB. So it lives in
+`vignettes/articles/mapgl.Rmd`, a pkgdown article: built and published on
+the website (https://milkway.github.io/rpic-r/articles/mapgl.html),
+excluded from the tarball by `.Rbuildignore` (`^vignettes/articles$`).
+`vignette("maps")` keeps a short unevaluated `rpic_mapgl()` snippet and
+links to the article; the help pages link to it too. Without mapgl the
+article's chunks are shown unevaluated with a note.

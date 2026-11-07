@@ -19,4 +19,8 @@ rpic_compile_ <- function(src, circuits, texlabels, scene, flatten, outline) .Ca
 
 rpic_geojson_ <- function(src, circuits, texlabels, options_json) .Call(wrap__rpic_geojson_, src, circuits, texlabels, options_json)
 
+rpic_maplibre_layers_ <- function(fc_json) .Call(wrap__rpic_maplibre_layers_, fc_json)
+
+rpic_geojson_bbox_ <- function(fc_json) .Call(wrap__rpic_geojson_bbox_, fc_json)
+
 # nolint end

@@ -30,10 +30,12 @@ reference:
     contents:
       - rpic_scene
   - title: Maps
-    desc: Place a pic drawing on the Earth — GeoJSON and sf.
+    desc: Place a pic drawing on the Earth — GeoJSON, sf and MapLibre/mapgl maps.
     contents:
       - rpic_geojson
       - rpic_sf
+      - rpic_maplibre_layers
+      - rpic_mapgl
   - title: knitr / Quarto
     desc: Inline pic diagrams in R Markdown and Quarto chunks.
     contents:

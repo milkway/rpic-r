@@ -31,9 +31,9 @@ library(ggplot2)
 
 pic_layers <- function(x) {
   list(
-    geom_sf(data = x[x$geopic.kind != "text", ],
+    geom_sf(data = x[!x$geopic.kind %in% c("text", "title"), ],
             aes(fill = fill, colour = stroke), linewidth = 0.4),
-    geom_sf_text(data = x[!is.na(x$geopic.text), ],
+    geom_sf_text(data = x[x$geopic.kind %in% c("text", "title"), ],
                  aes(label = geopic.text), size = 3),
     scale_fill_identity(), scale_colour_identity(),
     coord_sf(clip = "off"), theme_void()
@@ -260,28 +260,21 @@ ggplot(radius) + geom_sf(aes(fill = fill)) + scale_fill_identity()
 
 ## Interactive with mapgl
 
-An `sf` from `rpic_sf()` goes straight into a MapLibre map with
-[mapgl](https://walker-data.com/mapgl/): one layer per geometry type, the
-pic colours read from the feature properties.
+`rpic_mapgl()` puts a drawing on a MapLibre map from
+[mapgl](https://walker-data.com/mapgl/), styled by the engine's own layers
+(`rpic_maplibre_layers()`) — the ones
+[rpic.dev's Maps page](https://rpic.dev/docs/maps/) draws with, every stroke
+width, dot and label **true to the ground**:
 
 ```{r}
 library(mapgl)
 
-maplibre(bounds = radius) |>
-  add_source(id = "pic", data = radius) |>
-  add_fill_layer(id = "fills", source = "pic",
-                 filter = list("==", list("geometry-type"), "Polygon"),
-                 fill_color = get_column("fill"), fill_opacity = 0.6) |>
-  add_line_layer(id = "lines", source = "pic",
-                 line_color = get_column("stroke"), line_width = 1.5) |>
-  add_circle_layer(id = "points", source = "pic",
-                   filter = list("==", list("geometry-type"), "Point"),
-                   circle_color = get_column("stroke"), circle_radius = 3)
+maplibre(style = carto_style("positron")) |>
+  rpic_mapgl(radius)
 ```
 
-Here strokes and dots keep a fixed size on screen. Sizes true to the ground —
-line widths and text that scale with the map, as on
-[rpic.dev's Maps page](https://rpic.dev/docs/maps/) — need layer
-specifications computed from the registration; they arrive with
-`rpic_maplibre_layers()` in the next engine release
-([milkway/rpic-lang#432](https://github.com/milkway/rpic-lang/issues/432)).
+It takes pic source, an `rpic_geojson()` result or an `rpic_sf()` data frame
+such as `radius` above, and fits the map to the drawing. Live maps, and what
+the helper does step by step, are in the article
+[Interactive maps with mapgl](https://milkway.github.io/rpic-r/articles/mapgl.html)
+on the package website.
