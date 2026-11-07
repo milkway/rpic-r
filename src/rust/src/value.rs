@@ -21,7 +21,8 @@ pub fn to_robj_arrays(v: &Value) -> Robj {
     convert(v, 2)
 }
 
-// `min_atomic`: the shortest homogeneous array that becomes an atomic vector.
+// `min_atomic` (>= 1, so `[]` is always `list()`): the shortest homogeneous
+// array that becomes an atomic vector.
 fn convert(v: &Value, min_atomic: usize) -> Robj {
     match v {
         Value::Null => r!(NA_LOGICAL),
@@ -41,7 +42,7 @@ fn convert(v: &Value, min_atomic: usize) -> Robj {
 }
 
 fn array(a: &[Value], min_atomic: usize) -> Robj {
-    if a.is_empty() || a.len() < min_atomic {
+    if a.len() < min_atomic {
         return List::from_values(a.iter().map(|x| convert(x, min_atomic))).into();
     }
     if a.iter().all(Value::is_number) {
