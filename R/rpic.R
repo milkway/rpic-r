@@ -138,6 +138,72 @@ rpic_scene <- function(src, flatten = NULL, outline = FALSE,
   .rpic_value(res)
 }
 
+#' Compile to the full bundle (as an R list)
+#'
+#' The engine's compile bundle, converted to R: everything [rpic_manifest()]
+#' returns as JSON text, plus the scene on request, without a JSON parser on
+#' the R side. Use it to drive tools (editors, map front ends, checkers) from
+#' one compile.
+#'
+#' The list always carries
+#' * `svg` — the SVG string ([rpic_svg()]);
+#' * `animations` — the `animate` timelines (a list, empty when unused);
+#' * `diagnostics` — `print` lines and engine notices (a character vector);
+#' * `warnings` — structured compiler warnings, each a list with the
+#'   `rpic_error` diagnostic fields (with `scene = TRUE` the scene's own
+#'   `scene_unsupported` warnings join them). They are returned, not raised;
+#' * `objects` — every drawn object: SVG `id` (`"s0"`, ...), `kind`, `bbox`
+#'   in viewBox units (`NA` when it has none) and source position;
+#' * `places` — every `Label: position` statement as a named point (`label`,
+#'   `x`, `y` in SVG user units, enclosing `block`, source span);
+#' * `passthrough` — troff lines set aside (`text` and source position);
+#'
+#' plus `interactions` and `scroll` when the source uses `draggable` or
+#' `animate scroll`, and `scene` (the scene document of [rpic_scene()] as a
+#' nested list) when `scene = TRUE`.
+#'
+#' JSON objects become named lists, arrays of numbers/strings/logicals
+#' atomic vectors, other arrays lists, `null` is `NA`; nested names are in
+#' sorted order.
+#' @inheritParams rpic_scene
+#' @param scene also compile the scene (`scene` element).
+#' @param flatten,outline scene options (see [rpic_scene()]); used only when
+#'   `scene = TRUE`.
+#' @return a named list (see Details).
+#' @section Errors:
+#' Compile errors raise the same classed `rpic_error` condition as
+#' [rpic_svg()].
+#' @examples
+#' b <- rpic_compile('A: (0, 0)
+#' box "hi" at A; arrow')
+#' names(b)
+#' b$objects[[1]]$kind   # "box"
+#' b$places[[1]]$label   # "A"
+#' s <- rpic_compile("circle", scene = TRUE)$scene
+#' s$items[[1]]$kind     # "circle"
+#' @export
+rpic_compile <- function(src, circuits = FALSE, texlabels = FALSE, scene = FALSE,
+                         flatten = NULL, outline = FALSE) {
+  flat <- if (isTRUE(scene)) .rpic_flatten(flatten) else 0 # used only with the scene
+  res <- rpic_compile_(src, circuits, texlabels, isTRUE(scene), flat, isTRUE(outline))
+  b <- .rpic_value(res)
+  if (is.null(b$places)) b$places <- list()
+  if (is.null(b$passthrough)) b$passthrough <- list()
+  if (length(b$diagnostics) == 0) b$diagnostics <- character()
+  first <- c("svg", "animations", "diagnostics", "warnings", "objects",
+             "places", "passthrough", "interactions", "scroll", "scene")
+  b[c(intersect(first, names(b)), setdiff(names(b), first))]
+}
+
+# `flatten` for the scene paths: NULL keeps the cubics (0 to the shim).
+.rpic_flatten <- function(flatten) {
+  if (is.null(flatten)) return(0)
+  if (!is.numeric(flatten) || length(flatten) != 1 || !is.finite(flatten) || flatten <= 0) {
+    stop("`flatten` must be a single positive finite tolerance in inches", call. = FALSE)
+  }
+  as.numeric(flatten)
+}
+
 #' knitr engine for ```{rpic}``` chunks
 #'
 #' Register with [rpic_register_knitr()], then write pic code in a chunk:
@@ -148,19 +214,82 @@ rpic_scene <- function(src, flatten = NULL, outline = FALSE,
 #' ```
 #' ````
 #' Chunk options: `circuits`, `texlabels`, `scale`.
+#'
+#' @section Maps (`geo = TRUE`):
+#' With the chunk option `geo = TRUE` the chunk is georeferenced instead of
+#' drawn: the engine runs [rpic_sf()] (or [rpic_geojson()] when `sf` is not
+#' installed) and **assigns** the result to a variable in
+#' [knitr::knit_global()] — named by the chunk option `geo.var`, by default
+#' the chunk label made syntactic ([make.names()], `-` read as `_`). The
+#' chunk emits no figure; its source is echoed as usual. The georeferencing
+#' options ride as `geo.frame`, `geo.anchor`, `geo.scale`, `geo.bearing`,
+#' `geo.features`, `geo.flatten`, `geo.view_scale` and `geo.name_col` (the
+#' `geo.` prefix keeps `scale` for the PNG raster scale); chunk options are R
+#' expressions, so `geo.features = my_sf` works. Plot the result in a later R
+#' chunk:
+#' ````
+#' ```{rpic, geo=TRUE}
+#' geo_lon = -34.8711; geo_lat = -8.0631; geo_scale = 1000
+#' circle rad 2 at (0, 0)
+#' ```
+#'
+#' ```{r}
+#' ggplot2::ggplot(radius) + ggplot2::geom_sf(ggplot2::aes(fill = fill))
+#' ```
+#' ````
+#' (the first chunk being labelled `radius`).
 #' @param options knitr chunk options.
 #' @return The chunk output produced by [knitr::engine_output()] (the rendered
-#'   diagram as an included figure).
+#'   diagram as an included figure; with `geo = TRUE`, the source only).
 #' @export
 rpic_knitr_engine <- function(options) {
   src <- paste(options$code, collapse = "\n")
   circuits <- isTRUE(options$circuits)
   texlabels <- isTRUE(options$texlabels)
+  if (isTRUE(options$geo)) {
+    return(.rpic_knitr_geo(options, src, circuits, texlabels))
+  }
   scale <- if (is.null(options$scale)) 2 else options$scale
   path <- knitr::fig_path(".png", options)
   dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
   rpic_png(src, path, scale = scale, circuits = circuits, texlabels = texlabels)
-  knitr::engine_output(options, options$code, knitr::include_graphics(path))
+  # a list `out` goes through knitr's output hooks as-is, so the figure is
+  # included as a figure (a character `out` would print its path as text)
+  out <- list(knitr::include_graphics(path))
+  if (!isFALSE(options$echo)) {
+    # a numeric `echo` selects lines, as knitr's own engines do
+    code <- if (is.numeric(options$echo)) options$code[options$echo] else options$code
+    out <- c(list(structure(list(src = code), class = "source")), out)
+  }
+  knitr::engine_output(options, out = out)
+}
+
+# `geo = TRUE` chunks: georeference, assign into knit_global(), echo only.
+.rpic_knitr_geo <- function(options, src, circuits, texlabels) {
+  var <- options$geo.var
+  if (is.null(var)) {
+    label <- if (is.null(options$label)) "rpic_geo" else options$label
+    var <- make.names(gsub("-", "_", label, fixed = TRUE))
+  }
+  if (!is.character(var) || length(var) != 1 || !nzchar(var)) {
+    stop("chunk option `geo.var` must be a single variable name", call. = FALSE)
+  }
+  args <- list(src = src, circuits = circuits, texlabels = texlabels)
+  for (o in c("frame", "anchor", "scale", "bearing", "features", "flatten",
+              "view_scale", "name_col")) {
+    v <- options[[paste0("geo.", o)]]
+    if (!is.null(v)) args[[o]] <- v
+  }
+  fun <- if (.has_sf()) rpic_sf else rpic_geojson
+  # call with symbols, not inlined values: the conditions' `call` would
+  # otherwise carry the whole deparsed `features` data frame
+  cl <- as.call(c(list(as.name("FUN")), stats::setNames(lapply(names(args), as.name), names(args))))
+  value <- eval(cl, list2env(c(args, list(FUN = fun)), parent = environment()))
+  # the knitting environment (as knitr's own sql engine does for
+  # `output.var`); the user named the variable with this chunk
+  env <- knitr::knit_global()
+  assign(var, value, envir = env)
+  knitr::engine_output(options, options$code, "")
 }
 
 #' Register the rpic knitr engine

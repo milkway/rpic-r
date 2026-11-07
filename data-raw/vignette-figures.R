@@ -130,3 +130,55 @@ animate 3rd box with "draw" for 0.8
 ')
 writeLines(manifest, file.path(fig_dir, "animate.json"))
 cat("wrote animate.json\n")
+
+# ---- maps (vignette "maps") ----------------------------------------------
+# ggplot2 + sf figures of rpic_sf(); the pic sources are the engine's
+# examples/geo, copied as the test fixtures.
+
+if (requireNamespace("sf", quietly = TRUE) && requireNamespace("ggplot2", quietly = TRUE)) {
+  library(ggplot2)
+  geo_src <- function(name) {
+    paste(readLines(file.path("tests/testthat/fixtures/geo", paste0(name, ".pic"))),
+          collapse = "\n")
+  }
+  # every pic colour is already a hex string: identity scales draw the
+  # drawing as drawn; text features are labels, not markers
+  pic_layers <- function(x) {
+    shapes <- x[x$geopic.kind != "text", ]
+    labels <- x[!is.na(x$geopic.text), ]
+    list(
+      geom_sf(data = shapes, aes(fill = fill, colour = stroke), linewidth = 0.4),
+      geom_sf_text(data = labels, aes(label = geopic.text), size = 3),
+      scale_fill_identity(), scale_colour_identity(),
+      coord_sf(clip = "off"),
+      labs(x = NULL, y = NULL), theme_void(base_size = 9),
+      theme(plot.margin = margin(12, 24, 12, 24))
+    )
+  }
+  save_map <- function(name, p, width = 5, height = 3.6) {
+    path <- file.path(fig_dir, paste0(name, ".png"))
+    # geom_sf_text's st_point_on_surface() warns on lon/lat data; the
+    # labels are points already
+    suppressWarnings(ggsave(path, p, width = width, height = height, dpi = 110, bg = "white"))
+    cat("wrote", basename(path), "\n")
+  }
+
+  for (name in c("callout", "radius", "two-control-points", "arrow-between-features")) {
+    x <- rpic_sf(geo_src(name))
+    save_map(paste0("geo-", name), ggplot() + pic_layers(x))
+  }
+
+  nc <- sf::st_read(system.file("shape/nc.shp", package = "sf"), quiet = TRUE)
+  two <- nc[nc$NAME %in% c("Mecklenburg", "Wake"), ]
+  route <- rpic_sf('
+geo_scale = 50000        # one inch is 50 km
+arrowht = 0.3; arrowwid = 0.18
+arrow from Mecklenburg to Wake thick 1.5 color "firebrick"
+"Wake" above at Wake.n
+"Mecklenburg" below at Mecklenburg.s
+', features = two, name_col = "NAME")
+  save_map("geo-nc", ggplot() +
+    geom_sf(data = nc, fill = "grey95", colour = "grey70", linewidth = 0.2) +
+    geom_sf(data = two, fill = "#cfe3d6", colour = "#2f5d43", linewidth = 0.3) +
+    pic_layers(route) + theme(plot.margin = margin(4, 4, 4, 4)), width = 6.5, height = 3)
+}

@@ -1,7 +1,44 @@
 # rpic (development version)
 
-Tracks the rpic engine 0.14.0 (vendored crates `rpic-core`/`rpic-render`
-0.14.0). The R functions and their arguments are unchanged; rendering is
+## New features
+
+* `rpic_geojson()` places a pic drawing on the Earth and returns it as a
+  GeoJSON `FeatureCollection` (WGS84), through the engine's new
+  `geopic-core` crate: registration by `geo_lon`/`geo_lat`/`geo_scale`/
+  `geo_bearing` in the source (or the `anchor`, `scale`, `bearing`, `frame`
+  arguments, which win) or by control points `<Label>_lon`/`<Label>_lat`;
+  geometry densified so lines and circles are true on the ellipsoid. The
+  registration and the warnings ride as attributes. `features` injects
+  named places from R — a named list, a data frame or an `sf` object
+  (centroid + bounding box) — that the source can use by name.
+* `rpic_sf()` reads the same result into an `sf` data frame (EPSG:4326):
+  simplestyle columns keep their names (`stroke`, `stroke-width`, `fill`,
+  ...), `geopic:<name>` properties become `geopic.<name>`. `sf` is a
+  suggested package only.
+* Losses are never silent: one `rpic_geo_warning` (an `rpic_warning`) per
+  kind; registration failures raise `rpic_geo_error` (an `rpic_error`) with
+  `e$info$kind` and `e$info$hint`.
+* `rpic_compile()` returns the engine's whole compile bundle as an R list —
+  `svg`, `animations`, `diagnostics`, `warnings`, `objects`, `places`,
+  `passthrough` and, with `scene = TRUE`, the scene — without JSON parsing
+  in R.
+* The knitr engine georeferences chunks with `geo = TRUE`: the chunk
+  assigns its `rpic_sf()` result (or `rpic_geojson()` without `sf`) to a
+  variable named by `geo.var` (default: the chunk label) for later R
+  chunks, e.g. `ggplot2::geom_sf()`.
+* New vignette `vignette("maps")`: the engine's four geo examples with
+  `ggplot2`, features from `sf`'s `nc` dataset, and `mapgl`.
+
+## Bug fixes
+
+* The knitr engine includes the rendered PNG as a figure again; with
+  current knitr it printed the figure's path as text output.
+
+## Engine 0.14.0
+
+Tracks the rpic engine 0.14.0 (vendored crates `rpic-core`/`rpic-render`/
+`geopic-core` 0.14.0). The existing R functions and their arguments are
+unchanged; rendering is
 byte-identical to 0.12.1 over the engine's whole corpus. What reaches R users
 through the pic source and the JSON outputs:
 

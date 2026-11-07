@@ -1,0 +1,287 @@
+---
+title: "Maps: pic drawings on the Earth"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Maps: pic drawings on the Earth}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+A pic drawing is laid out on a plane in inches. Tell rpic where that plane
+sits on the Earth and the same drawing becomes geographic data:
+`rpic_geojson()` returns a GeoJSON `FeatureCollection` in WGS84
+longitude/latitude, and `rpic_sf()` reads it into an `sf` data frame for
+`ggplot2::geom_sf()`, `mapgl`, or any other spatial tool. Boxes and circles
+become polygons, lines and arrows line strings (arrowheads are features of
+their own), dots and text points, and every feature keeps its pic style in
+simplestyle columns (`stroke`, `stroke-width`, `fill`, ...) next to the
+`geopic.*` ones (`geopic.kind`, `geopic.text`, `geopic.id`, ...).
+
+The figures below were pre-rendered (`data-raw/vignette-figures.R` in the
+source repository) with a small helper that draws pic colours as they are —
+they are hex strings already — and puts each text where pic put it:
+
+```{r}
+library(rpic)
+library(ggplot2)
+
+pic_layers <- function(x) {
+  list(
+    geom_sf(data = x[x$geopic.kind != "text", ],
+            aes(fill = fill, colour = stroke), linewidth = 0.4),
+    geom_sf_text(data = x[!is.na(x$geopic.text), ],
+                 aes(label = geopic.text), size = 3),
+    scale_fill_identity(), scale_colour_identity(),
+    coord_sf(clip = "off"), theme_void()
+  )
+}
+```
+
+`rpic_sf()` needs the `sf` package (`install.packages("sf")`);
+`rpic_geojson()` needs nothing beyond rpic. The format — registration,
+geometry per kind, properties, warnings — is specified in the engine's
+[docs/geopic.md](https://github.com/milkway/rpic-lang/blob/main/docs/geopic.md).
+
+## Registration
+
+The drawing is placed by a similarity with four parameters, declared with
+pic variables or passed as arguments (an argument wins over the source):
+
+| pic variable | argument | meaning |
+|---|---|---|
+| `geo_lon`, `geo_lat` | `anchor = c(lon, lat)` | where the pic origin `(0, 0)` is |
+| `geo_scale` | `scale` | metres per inch of the drawing (default 100) |
+| `geo_bearing` | `bearing` | azimuth of the drawing's +y axis, degrees clockwise from north |
+| `geo_frame` | `frame` | `"enu"` (local tangent plane, true distances; default) or `"mercator"` |
+
+Or the drawing names **control points**: a place `A: (x, y)` with `A_lon`
+and `A_lat`. One control point anchors the drawing there; two fix the scale
+and bearing exactly; three or more are fitted by least squares (with the
+residual reported). The registration used comes back as an attribute:
+
+```{r}
+attr(rpic_geojson(src), "registration")
+```
+
+## A callout pinned to one place
+
+`geo_lon`/`geo_lat` put the pic origin on Recife's Marco Zero and
+`geo_scale` makes one inch 400 m:
+
+```{r}
+callout <- rpic_sf('
+geo_lon = -34.8711
+geo_lat = -8.0631
+geo_scale = 400          # metres per inch
+
+dot at (0, 0) rad 0.04
+B: box "Marco Zero" "Recife" wid 1.3 ht 0.5 at (1.4, 0.9) fill 0.95 class "screen"
+arrow from B.sw to (0.06, 0.06) thick 1.2
+')
+ggplot() + pic_layers(callout)
+```
+
+![a box labelled Marco Zero, Recife, with an arrow pointing at a dot south-west of it](figures/geo-callout.png)
+
+The box carries `class "screen"`: its `geopic.placement` is `"screen"`, a
+hint for interactive maps that it is an annotation to keep at screen size
+(dots and text are screen-placed too).
+
+## A geodesic radius
+
+With one inch a kilometre, a circle of radius 2 is a 2 km circle around the
+anchor. Lines are densified in the plane before they go to
+longitude/latitude, so every vertex is 2 000 m from the centre along the
+ellipsoid — not a circle in degree space:
+
+```{r}
+radius <- rpic_sf('
+geo_lon = -34.8711
+geo_lat = -8.0631
+geo_scale = 1000         # metres per inch
+
+C: circle rad 2 at (0, 0) dashed fill 0.97
+dot at C.c rad 0.04
+line from C.c to C.e thin
+"2 km" above at 0.5 <C.c, C.e>
+')
+ggplot() + pic_layers(radius)
+```
+
+![a circle with its centre dot and one radius labelled 2 km](figures/geo-radius.png)
+
+## Registering a sketch by two surveyed corners
+
+A site plan drawn in metres (`scale = 10` puts ten pic units in an inch),
+oriented however was convenient on paper. Two corners whose coordinates
+were surveyed register it; scale and bearing come out of the fit, so the
+plan lands rotated to true north on its own:
+
+```{r}
+site <- rpic_sf('
+scale = 10
+margin = 2.5
+
+A: (0, 0)
+A_lon = -34.8716
+A_lat = -8.0608
+B: (40, 25)
+B_lon = -34.87155
+B_lat = -8.06030
+
+Yard: box wid 40 ht 25 with .sw at A
+Shed: box "shed" wid 12 ht 8 with .sw at A + (3, 3) fill 0.85
+Tank: circle "tank" rad 4 at A + (30, 17) fill 0.9
+line from Shed.e to Tank.w dashed
+dot at A rad 0.4
+dot at B rad 0.4
+"A" at A + (-1.5, -1.5)
+"B" at B + (1.5, 1.5)
+')
+attr(site, "registration")$method       # "two_points"
+ggplot() + pic_layers(site)
+```
+
+![a rectangular yard rotated on the map, with a shed and a tank inside and corners A and B marked](figures/geo-two-control-points.png)
+
+## An arrow between two features
+
+Two control points fix the whole registration, so a drawing can be made in
+any convenient units and still land with the right size — here the 6.3 km
+between Recife and Olinda:
+
+```{r}
+arrow <- rpic_sf('
+Recife: (0, 0)
+Recife_lon = -34.8711
+Recife_lat = -8.0631
+Olinda: (0.6, 1.6)
+Olinda_lon = -34.8553
+Olinda_lat = -8.0089
+
+dot at Recife rad 0.04
+dot at Olinda rad 0.04
+arrow from Recife to Olinda thick 1.5 color "firebrick"
+"Recife" below at Recife + (0, -0.05)
+"Olinda" above at Olinda + (0, 0.05)
+"6.3 km" ljust at 0.5 <Recife, Olinda> + (0.1, 0)
+')
+ggplot() + pic_layers(arrow)
+```
+
+![a red arrow from Recife to Olinda labelled 6.3 km](figures/geo-arrow-between-features.png)
+
+### Features from your own data
+
+The places do not have to be written in the source. `features` hands rpic
+named features from R — a named list of `c(lon, lat)`, a data frame with
+`name`, `lon`, `lat`, or an `sf` object — and the source just uses their
+names. With `sf`, each feature's point is its centroid and its bounding box
+becomes an invisible pic box, so `Wake.n` is the top of Wake county. Here,
+two counties of the North Carolina dataset that ships with `sf`:
+
+```{r}
+nc <- sf::st_read(system.file("shape/nc.shp", package = "sf"), quiet = TRUE)
+two <- nc[nc$NAME %in% c("Mecklenburg", "Wake"), ]
+
+route <- rpic_sf('
+geo_scale = 50000        # one inch is 50 km
+arrowht = 0.3; arrowwid = 0.18
+arrow from Mecklenburg to Wake thick 1.5 color "firebrick"
+"Wake" above at Wake.n
+"Mecklenburg" below at Mecklenburg.s
+', features = two, name_col = "NAME")
+
+ggplot() +
+  geom_sf(data = nc, fill = "grey95", colour = "grey70", linewidth = 0.2) +
+  geom_sf(data = two, fill = "#cfe3d6", colour = "#2f5d43", linewidth = 0.3) +
+  pic_layers(route)
+```
+
+![North Carolina counties with Mecklenburg and Wake highlighted and a red arrow from one to the other](figures/geo-nc.png)
+
+A feature the source defines itself (a place, or a labelled object) is a
+control point of the drawing's own geometry; the others are placed first and
+then injected, so the arrow starts and ends exactly at the two centroids.
+Here no anchor is declared, so the features place the drawing: `geo_scale`
+still sets how large pic's own lengths are — arrowheads, text offsets —
+on the ground. Feature names must be pic labels (an uppercase letter, then
+letters, digits or underscores); anything else is an error, never written
+into the source. The data are transformed to WGS84 first when they are in
+another CRS (`nc` is NAD27).
+
+## Warnings and errors
+
+What GeoJSON cannot carry is reported, never dropped silently: a gradient
+fill keeps its first colour, animations are ignored, a control point that
+names no label is skipped. Each kind of loss raises one R warning of class
+`rpic_geo_warning` (inheriting `rpic_warning`), and the full list rides in
+the `"warnings"` attribute:
+
+```{r}
+gj <- withCallingHandlers(
+  rpic_geojson('geo_lon = 0; geo_lat = 0
+box gradient "red" "blue"'),
+  rpic_geo_warning = function(w) invokeRestart("muffleWarning")
+)
+attr(gj, "warnings")[[1]]$kind   # "unsupported_style"
+```
+
+A drawing that cannot be placed raises `rpic_geo_error` (an `rpic_error`),
+with a machine-readable `kind` and a hint:
+
+```{r}
+tryCatch(rpic_geojson("box"), rpic_geo_error = function(e) e$info$kind)
+#> [1] "no_registration"
+```
+
+## In R Markdown and Quarto
+
+The knitr engine (`rpic_register_knitr()`) georeferences a chunk with
+`geo = TRUE`: instead of a figure, the chunk assigns `rpic_sf()`'s result to
+a variable named after the chunk label (or the chunk option `geo.var`), for
+the R chunks that follow. Georeferencing options ride as `geo.anchor`,
+`geo.scale`, `geo.features`, ...:
+
+````
+```{rpic radius, geo=TRUE}
+geo_lon = -34.8711; geo_lat = -8.0631; geo_scale = 1000
+circle rad 2 at (0, 0) fill 0.97
+```
+
+```{r}
+ggplot(radius) + geom_sf(aes(fill = fill)) + scale_fill_identity()
+```
+````
+
+## Interactive with mapgl
+
+An `sf` from `rpic_sf()` goes straight into a MapLibre map with
+[mapgl](https://walker-data.com/mapgl/): one layer per geometry type, the
+pic colours read from the feature properties.
+
+```{r}
+library(mapgl)
+
+maplibre(bounds = radius) |>
+  add_source(id = "pic", data = radius) |>
+  add_fill_layer(id = "fills", source = "pic",
+                 filter = list("==", list("geometry-type"), "Polygon"),
+                 fill_color = get_column("fill"), fill_opacity = 0.6) |>
+  add_line_layer(id = "lines", source = "pic",
+                 line_color = get_column("stroke"), line_width = 1.5) |>
+  add_circle_layer(id = "points", source = "pic",
+                   filter = list("==", list("geometry-type"), "Point"),
+                   circle_color = get_column("stroke"), circle_radius = 3)
+```
+
+Here strokes and dots keep a fixed size on screen. Sizes true to the ground —
+line widths and text that scale with the map, as on
+[rpic.dev's Maps page](https://rpic.dev/docs/maps/) — need layer
+specifications computed from the registration; they arrive with
+`rpic_maplibre_layers()` in the next engine release
+([milkway/rpic-lang#432](https://github.com/milkway/rpic-lang/issues/432)).

@@ -1,5 +1,8 @@
 use extendr_api::prelude::*;
 
+mod geo;
+mod value;
+
 // Low-level wrappers (no `@export`): they are package-internal and called by the
 // user-facing R functions in R/rpic.R. Keeping them undocumented avoids R CMD
 // check `\usage`/export warnings.
@@ -134,6 +137,121 @@ fn rpic_scene_(src: &str, circuits: bool, texlabels: bool, flatten: f64, outline
     }
 }
 
+// The full compile bundle (engine `compile_json_with_options`, or
+// `compile_json_all_with_options` with the scene) converted to an R list:
+// `svg`, `animations`, `diagnostics`, `warnings`, `objects`, plus `places`,
+// `passthrough`, `interactions`, `scroll` when the source has them and
+// `scene` when asked. A pic error comes back as `list(error =, info =)`
+// like every other shim function.
+#[extendr]
+fn rpic_compile_(
+    src: &str,
+    circuits: bool,
+    texlabels: bool,
+    scene: bool,
+    flatten: f64,
+    outline: bool,
+) -> List {
+    ensure_math_renderer();
+    let copts = opts(circuits, texlabels);
+    let json = if scene {
+        let sopts = rpic_core::SceneOptions {
+            flatten: Some(flatten).filter(|f| f.is_finite() && *f > 0.0),
+            outline,
+            source: None,
+        };
+        rpic_core::compile_json_all_with_options(src, &copts, &sopts)
+    } else {
+        rpic_core::compile_json_with_options(src, &copts)
+    };
+    let v: serde_json::Value = match serde_json::from_str(&json) {
+        Ok(v) => v,
+        Err(e) => return fail(&format!("internal: bundle JSON does not parse: {e}"), None),
+    };
+    if let Some(msg) = v.get("error") {
+        let info: Robj = match v.get("error_info") {
+            Some(i) => info_from_value(i).into(),
+            None => r!(NULL),
+        };
+        return list!(error = msg.as_str().unwrap_or("compile error"), info = info);
+    }
+    list!(value = value::to_robj(&v))
+}
+
+// The bundle's `error_info` with the field types of `info_list` (integer
+// positions, `NA` when absent) so `e$info` looks the same on every path.
+fn info_from_value(v: &serde_json::Value) -> List {
+    let s = |k: &str| v.get(k).and_then(|x| x.as_str());
+    let n = |k: &str| v.get(k).and_then(|x| x.as_u64()).map(|x| x as u32);
+    list!(
+        message = s("message").unwrap_or(""),
+        line = n("line"),
+        col = n("col"),
+        end_col = n("end_col"),
+        file = s("file"),
+        kind = s("kind").unwrap_or(""),
+        found = s("found"),
+        expected = s("expected"),
+        hint = s("hint")
+    )
+}
+
+fn warn_list(w: &geo::Warn) -> Robj {
+    list!(
+        kind = w.kind.as_str(),
+        message = w.message.as_str(),
+        hint = w.hint.as_deref(),
+        id = w.id.as_deref(),
+        line = w.line,
+        col = w.col,
+        end_col = w.end_col,
+        file = w.file.as_deref()
+    )
+    .into()
+}
+
+// pic source → GeoJSON (engine docs/geopic.md). `options_json` carries the
+// GeoOptions R/geo.R validated: frame, anchor, scale, bearing, features
+// (`[{name, lon, lat, bbox?}]`), flatten, view_scale, screen_classes.
+// Success = `list(value = list(geojson = <FeatureCollection text>, warnings
+// = <list of kind/message/hint/id/line/col/end_col/file>, registration =
+// <named list>))`; failure = `list(error =, info =, geo =)` where `geo`
+// says whether it is a georeferencing error (info: kind, message, hint) or
+// a pic compile error (info: the usual diagnostic).
+#[extendr]
+fn rpic_geojson_(src: &str, circuits: bool, texlabels: bool, options_json: &str) -> List {
+    ensure_math_renderer();
+    match geo::run(src, &opts(circuits, texlabels), options_json) {
+        Ok(out) => {
+            let warnings: Vec<Robj> = out.warnings.iter().map(warn_list).collect();
+            let reg = serde_json::to_value(&out.registration).unwrap_or(serde_json::Value::Null);
+            list!(
+                value = list!(
+                    geojson = out.geojson,
+                    warnings = List::from_values(warnings),
+                    registration = value::to_robj(&reg)
+                )
+            )
+        }
+        Err(geo::Failure::Compile(e)) => {
+            list!(
+                error = e.message.as_str(),
+                info = info_list(&e.info),
+                geo = false
+            )
+        }
+        Err(geo::Failure::Geo(e)) => list!(
+            error = e.to_string(),
+            info = list!(
+                kind = e.kind.as_str(),
+                message = e.message.as_str(),
+                hint = e.hint.as_deref()
+            ),
+            geo = true
+        ),
+    }
+}
+
 // Macro to generate exports.
 extendr_module! {
     mod rpic;
@@ -142,4 +260,6 @@ extendr_module! {
     fn rpic_pdf_;
     fn rpic_manifest_;
     fn rpic_scene_;
+    fn rpic_compile_;
+    fn rpic_geojson_;
 }

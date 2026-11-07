@@ -11,7 +11,7 @@ rpic_knitr_engine(options)
 }
 \value{
 The chunk output produced by \code{\link[knitr:engine_output]{knitr::engine_output()}} (the rendered
-diagram as an included figure).
+diagram as an included figure; with \code{geo = TRUE}, the source only).
 }
 \description{
 Register with \code{\link[=rpic_register_knitr]{rpic_register_knitr()}}, then write pic code in a chunk:
@@ -24,3 +24,30 @@ resistor(A,B)
 
 Chunk options: \code{circuits}, \code{texlabels}, \code{scale}.
 }
+\section{Maps (\code{geo = TRUE})}{
+
+With the chunk option \code{geo = TRUE} the chunk is georeferenced instead of
+drawn: the engine runs \code{\link[=rpic_sf]{rpic_sf()}} (or \code{\link[=rpic_geojson]{rpic_geojson()}} when \code{sf} is not
+installed) and \strong{assigns} the result to a variable in
+\code{\link[knitr:knit_global]{knitr::knit_global()}} — named by the chunk option \code{geo.var}, by default
+the chunk label made syntactic (\code{\link[=make.names]{make.names()}}, \code{-} read as \verb{_}). The
+chunk emits no figure; its source is echoed as usual. The georeferencing
+options ride as \code{geo.frame}, \code{geo.anchor}, \code{geo.scale}, \code{geo.bearing},
+\code{geo.features}, \code{geo.flatten}, \code{geo.view_scale} and \code{geo.name_col} (the
+\code{geo.} prefix keeps \code{scale} for the PNG raster scale); chunk options are R
+expressions, so \code{geo.features = my_sf} works. Plot the result in a later R
+chunk:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{```\{rpic, geo=TRUE\}
+geo_lon = -34.8711; geo_lat = -8.0631; geo_scale = 1000
+circle rad 2 at (0, 0)
+```
+
+```\{r\}
+ggplot2::ggplot(radius) + ggplot2::geom_sf(ggplot2::aes(fill = fill))
+```
+}\if{html}{\out{</div>}}
+
+(the first chunk being labelled \code{radius}).
+}
+
