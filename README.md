@@ -75,7 +75,7 @@ with `circuits = TRUE`), kind, and a did-you-mean hint:
 
 ```r
 tryCatch(
-  rpic_svg("bxo", circuits = TRUE),
+  pic("bxo", circuits = TRUE) |> rpic_svg(),
   rpic_error = function(e) list(line = e$info$line, hint = e$info$hint)
 )
 #> $line

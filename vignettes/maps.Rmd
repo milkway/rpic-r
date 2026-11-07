@@ -248,7 +248,7 @@ A drawing that cannot be placed raises `rpic_geo_error` (an `rpic_error`),
 with a machine-readable `kind` and a hint:
 
 ```{r}
-tryCatch(rpic_geojson("box"), rpic_geo_error = function(e) e$info$kind)
+tryCatch(pic("box") |> rpic_geojson(), rpic_geo_error = function(e) e$info$kind)
 #> [1] "no_registration"
 ```
 
