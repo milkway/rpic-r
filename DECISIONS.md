@@ -72,7 +72,12 @@ nothing for inputs that already worked. Worth proposing upstream.
   other CRSs are transformed to EPSG:4326 first.
 * knitr `geo = TRUE` chunks emit no figure (the drawing is meant for the
   map that follows) and take their geo options with a `geo.` prefix —
-  `scale` is already the PNG raster scale of ordinary chunks.
+  `scale` is already the PNG raster scale of ordinary chunks. The result
+  is assigned into `knitr::knit_global()` — the pattern of knitr's own
+  `sql` engine (`output.var`); the environment is taken into a variable
+  first so R CMD check does not misread it as an assignment to the global
+  environment (it is the knitting environment, which is only `globalenv()`
+  when the user knits there).
 
 ## D5 — Maps vignette pre-rendered (2026-11-07)
 

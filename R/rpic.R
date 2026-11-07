@@ -280,7 +280,10 @@ rpic_knitr_engine <- function(options) {
   }
   fun <- if (.has_sf()) rpic_sf else rpic_geojson
   value <- do.call(fun, args)
-  assign(var, value, envir = knitr::knit_global())
+  # the knitting environment (as knitr's own sql engine does for
+  # `output.var`); the user named the variable with this chunk
+  env <- knitr::knit_global()
+  assign(var, value, envir = env)
   knitr::engine_output(options, options$code, "")
 }
 

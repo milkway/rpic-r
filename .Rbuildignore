@@ -17,3 +17,4 @@
 ^AGENTS\.md$
 ^rpic_[0-9].*\.tar\.gz$
 ^DECISIONS\.md$
+^\.git$
