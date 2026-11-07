@@ -153,3 +153,8 @@ test_that("a feature that does not project finitely is a geo error, not a parse 
   # check (invalid_feature) is the backstop for anything that slips past
   expect_true(err$info$kind %in% c("invalid_anchor", "invalid_feature"))
 })
+
+test_that("blank rows of a label stack are kept in geopic:text (engine 0.16.0)", {
+  gj <- rpic_geojson('geo_lon = 0; geo_lat = 0\nbox "" "below"')
+  expect_match(gj, '"geopic:text":"\\nbelow"', fixed = TRUE)
+})

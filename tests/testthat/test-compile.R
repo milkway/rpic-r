@@ -26,6 +26,21 @@ test_that("rpic_compile carries passthrough, animations and the scene", {
   expect_false(is.null(cubic$paths[[1]]$cubics))
 })
 
+test_that("scene text carries rows (engine 0.16.0) and blocks the raw call arguments", {
+  it <- rpic_compile('box "" "below"', scene = TRUE)$scene$items[[1]]
+  expect_identical(it$text_rows, 2)
+  expect_length(it$text, 1)
+  expect_identical(it$text[[1]]$text, "below")
+  expect_identical(it$text[[1]]$row, 1)
+  expect_length(it$text_center, 2)
+  sc <- rpic_compile('define m { [ box ] }\nm(1e-9,  "x")', scene = TRUE)$scene
+  blk <- Filter(function(i) identical(i$kind, "block"), sc$items)[[1]]
+  expect_identical(blk$call$name, "m")
+  expect_identical(blk$call$args, c("0.000000001", '"x"'))
+  expect_identical(vapply(blk$call$raw_args, function(a) a$text, ""), c("1e-9", '"x"'))
+  expect_identical(blk$call$raw_args[[1]]$line, 2)
+})
+
 test_that("rpic_compile errors are rpic_error with a structured info", {
   e <- tryCatch(rpic_compile("bxo"), rpic_error = function(e) e)
   expect_s3_class(e, "rpic_error")
