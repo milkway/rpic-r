@@ -1005,15 +1005,15 @@ dependencies = [
 
 [[package]]
 name = "rpic-core"
-version = "0.13.0"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9b6d08a0fa4bc5ea52d2639c7354c5046f5c8d24d0da18fd304460fbbe0fa3e"
+checksum = "07c1c54e8e09451653f41f036c0f138c20fe44a6e8817ec5fff6d710ba132feb"
 
 [[package]]
 name = "rpic-render"
-version = "0.13.0"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2db8d0874fcbac746df133f843c29a43b05925df0b8384bd6f32b06049c005af"
+checksum = "b1921f125cf3563646426ee62e6c971675765a2a2588766247ec57a6c715b865"
 dependencies = [
  "ratex-layout",
  "ratex-parser",
@@ -1216,9 +1216,9 @@ dependencies = [
 
 [[package]]
 name = "smallvec"
-version = "1.16.4"
+version = "1.16.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d0d5d4b1981b8bbbb7aed204cae5726d683d5d6ac7e74ec54122ea28f315e7c8"
+checksum = "149309498a5f7334b12ddae0cad8aba81ce785fe91755068867e017cf98fee46"
 
 [[package]]
 name = "strict-num"
