@@ -187,3 +187,89 @@ text_scale = 1, fit = TRUE)`.
   checked (MapLibre drops a layer whose `beforeId` is missing at runtime;
   when the style *can* be read a missing id warns and appends, like the JS
   `console.warn`). An id among the map's own added layers needs no fetch.
+
+## D10 — Drawing data are plain data frames (2026-11-07)
+
+`rpic_objects()`, `rpic_places()` and `rpic_warnings()` return a plain
+`data.frame`, never a tibble — not even when tibble is installed. The class
+of a result must not depend on what else happens to be in the library
+(a test, a CRAN check machine and a user would see different printing and
+different `[` semantics: `df[, "kind"]` is a vector for a data.frame, a
+one-column tibble for a tibble), and the package keeps zero Imports.
+`tibble::as_tibble(rpic_objects(p))` is one call for those who want it.
+The columns are fixed per function and always present — a drawing with
+nothing to report is a zero-row frame with the same columns and types — so
+code written against them does not branch on emptiness. Absent fields are
+`NA` (the package idiom); source positions are integers; `bbox` (engine
+`{x, y, w, h}` in viewBox units, y down) is split into corners
+`bbox_x0, bbox_y0, bbox_x1, bbox_y1` so it filters and joins without list
+columns. `places$block` is the engine's enclosing block path when the
+bundle carries one; engine 0.16.0's bundle does not (its `places` records
+have no `block` key), so the column is `NA` for now — kept so the shape does
+not change when the engine adds it. For `rpic_geojson()`/`rpic_sf()`
+results `rpic_warnings()` tabulates their `"warnings"` attribute (the geo
+vocabulary: `kind`, `message`, `hint`, `id`, span) instead of compiling.
+
+## D11 — `pic()`: a classed string, `NULL` defaults, Studio detection (2026-11-07)
+
+* **Representation.** An `rpic_source` is the source as a character scalar
+  with class `rpic_source` and logical attributes `circuits`/`texlabels`.
+  It is still `is.character()`, so a `pic()` passed to code that expects a
+  string keeps working; `as.character()` drops the class and attributes.
+* **Defaults.** `circuits`/`texlabels` on every `rpic_*()` function default
+  to `NULL`: the `pic()`'s setting, else `FALSE`. `missing()` was the
+  alternative, but it breaks as soon as a wrapper passes the argument on;
+  `NULL` composes. A plain string keeps `FALSE`, so code written for CRAN's
+  0.12.1 renders byte-identically. An explicit argument always wins over
+  the object.
+* **Detection** follows the Studio (`rpic-app/apps/web/src/lib/detect.ts`):
+  `circuits` = a call `name(` / `name (` of one of the 80 public macros of
+  the engine's `circuits.pic`, outside strings and comments — or a bare
+  use of such a name (the engine expands a macro without arguments), unless
+  the source assigns/labels that name (`wire = 3`, `ground:`) or uses it as
+  a field (`.ground`) — or a
+  `copy "circuits"` line (`circuits = TRUE` alongside it is harmless — the
+  library only defines macros, and the SVG is identical); `texlabels` = a
+  string literal that is entirely `$...$` after trimming. The macro list is
+  a constant in `R/source.R` — refresh it when the engine adds elements.
+  Comments are found in ONE left-to-right scan together with strings
+  (whichever starts first wins), so a `"` in a comment opens no string and
+  `"a # b"` is a string; `texlabels` looks only at strings outside
+  comments. Detection is a guess, so it only sets defaults and is
+  overridable both in `pic()` and per call. Explicit flags on every
+  `rpic_*()` go through the same validation as `pic()`'s (`.flag()`): `NA`,
+  `"TRUE"`, length ≠ 1 are errors, never silently `FALSE`.
+* **Printing.** `print()` never fails on a broken drawing (the summary is
+  printed first; a compile error in the interactive preview is a message).
+  The preview goes to `getOption("viewer")` (an HTML page in `tempdir()`,
+  what RStudio/Positron accept) or `utils::browseURL()` of an SVG file.
+  The preview file is one fixed path, `tempdir()/rpic-view/index.html`
+  (or `pic.svg`), overwritten by each print. `knit_print()` writes a PNG
+  under the chunk's `fig.path` (not inline SVG: two inline SVGs on one page
+  share ids such as gradient definitions, and PNG works in every output
+  format), named by content, `<label>-rpic-<md5 prefix>.png`: several
+  `pic()`s in one chunk, or one after a base plot, never share a file,
+  re-knitting reuses the names, and no counter state is kept (knitr's own
+  plot counter is internal; knitr counts our `include_graphics()` as a chunk
+  figure, so base plots move on to the next number). The `rpic` engine's
+  single figure keeps knitr's default name; both go through `.knit_png()`.
+* **S3 registration for Suggests generics** (`knitr::knit_print`,
+  `ggplot2::autoplot`) uses roxygen's `@exportS3Method pkg::generic` — the
+  delayed `S3method(pkg::gen, class)` NAMESPACE directive (R ≥ 3.6): the
+  method is registered when knitr/ggplot2 is loaded, with no `.onLoad`
+  code and no hard dependency.
+* **snake_case columns.** `rpic_sf()` names columns by one rule,
+  `rpic_sf_names()`: every `:` and `-` of the GeoJSON property becomes `_`.
+  It is applied to the REAL property names: the shim
+  `rpic_geojson_props_()` lists them from the engine's text, and each sf
+  column — `make.unique(make.names(<property>))`, sf's mangling — is renamed
+  to `rpic_sf_names(<property>)` (clashes after snake_casing made unique),
+  rather than guessing back from sf's dots. The engine's GeoJSON text (and its MapLibre layers) keeps
+  `geopic:kind`/`stroke-width`: the R names are an R-side view.
+* **`add_rpic()`** is mapgl's verb shape (`add_*()`, map first, returns the
+  map). `rpic_mapgl` is bound to the same function object (`identical()`),
+  documented on the same page, so the alias can never drift.
+* **`autoplot.rpic_source()`** is cheap (ggplot2 and sf were already in
+  Suggests): `rpic_sf()` + identity fill/colour scales + `geom_sf_text()` of
+  the `text`/`title` points (`fun.geometry` = identity, they are points
+  already, which also avoids sf's lon/lat `st_point_on_surface()` warning).

@@ -18,8 +18,10 @@ longitude/latitude, and `rpic_sf()` reads it into an `sf` data frame for
 `ggplot2::geom_sf()`, `mapgl`, or any other spatial tool. Boxes and circles
 become polygons, lines and arrows line strings (arrowheads are features of
 their own), dots and text points, and every feature keeps its pic style in
-simplestyle columns (`stroke`, `stroke-width`, `fill`, ...) next to the
-`geopic.*` ones (`geopic.kind`, `geopic.text`, `geopic.id`, ...).
+simplestyle columns (`stroke`, `stroke_width`, `fill`, ...) next to the
+`geopic_*` ones (`geopic_kind`, `geopic_text`, `geopic_id`, ...): every
+column name is the GeoJSON property name in snake_case (`rpic_sf_names()`).
+Write the source with `pic()` and pipe it: `pic(src) |> rpic_sf()`.
 
 The figures below were pre-rendered (`data-raw/vignette-figures.R` in the
 source repository) with a small helper that draws pic colours as they are —
@@ -31,15 +33,19 @@ library(ggplot2)
 
 pic_layers <- function(x) {
   list(
-    geom_sf(data = x[!x$geopic.kind %in% c("text", "title"), ],
+    geom_sf(data = x[!x$geopic_kind %in% c("text", "title"), ],
             aes(fill = fill, colour = stroke), linewidth = 0.4),
-    geom_sf_text(data = x[x$geopic.kind %in% c("text", "title"), ],
-                 aes(label = geopic.text), size = 3),
+    geom_sf_text(data = x[x$geopic_kind %in% c("text", "title"), ],
+                 aes(label = geopic_text), size = 3),
     scale_fill_identity(), scale_colour_identity(),
     coord_sf(clip = "off"), theme_void()
   )
 }
 ```
+
+For a quick look, `autoplot()` draws a georeferenced `pic()` the same way in
+one call — `pic(src) |> autoplot()` — and the helper above is what to start
+from for anything more (a basemap under the drawing, pic's own line widths).
 
 `rpic_sf()` needs the `sf` package (`install.packages("sf")`);
 `rpic_geojson()` needs nothing beyond rpic. The format — registration,
@@ -64,7 +70,7 @@ and bearing exactly; three or more are fitted by least squares (with the
 residual reported). The registration used comes back as an attribute:
 
 ```{r}
-attr(rpic_geojson(src), "registration")
+pic(src) |> rpic_geojson() |> attr("registration")
 ```
 
 ## A callout pinned to one place
@@ -73,7 +79,7 @@ attr(rpic_geojson(src), "registration")
 `geo_scale` makes one inch 400 m:
 
 ```{r}
-callout <- rpic_sf('
+callout <- pic('
 geo_lon = -34.8711
 geo_lat = -8.0631
 geo_scale = 400          # metres per inch
@@ -81,13 +87,14 @@ geo_scale = 400          # metres per inch
 dot at (0, 0) rad 0.04
 B: box "Marco Zero" "Recife" wid 1.3 ht 0.5 at (1.4, 0.9) fill 0.95 class "screen"
 arrow from B.sw to (0.06, 0.06) thick 1.2
-')
+') |>
+  rpic_sf()
 ggplot() + pic_layers(callout)
 ```
 
 ![a box labelled Marco Zero, Recife, with an arrow pointing at a dot south-west of it](figures/geo-callout.png)
 
-The box carries `class "screen"`: its `geopic.placement` is `"screen"`, a
+The box carries `class "screen"`: its `geopic_placement` is `"screen"`, a
 hint for interactive maps that it is an annotation to keep at screen size
 (dots and text are screen-placed too).
 
@@ -99,7 +106,7 @@ longitude/latitude, so every vertex is 2 000 m from the centre along the
 ellipsoid — not a circle in degree space:
 
 ```{r}
-radius <- rpic_sf('
+radius <- pic('
 geo_lon = -34.8711
 geo_lat = -8.0631
 geo_scale = 1000         # metres per inch
@@ -108,7 +115,8 @@ C: circle rad 2 at (0, 0) dashed fill 0.97
 dot at C.c rad 0.04
 line from C.c to C.e thin
 "2 km" above at 0.5 <C.c, C.e>
-')
+') |>
+  rpic_sf()
 ggplot() + pic_layers(radius)
 ```
 
@@ -122,7 +130,7 @@ were surveyed register it; scale and bearing come out of the fit, so the
 plan lands rotated to true north on its own:
 
 ```{r}
-site <- rpic_sf('
+site <- pic('
 scale = 10
 margin = 2.5
 
@@ -141,7 +149,8 @@ dot at A rad 0.4
 dot at B rad 0.4
 "A" at A + (-1.5, -1.5)
 "B" at B + (1.5, 1.5)
-')
+') |>
+  rpic_sf()
 attr(site, "registration")$method       # "two_points"
 ggplot() + pic_layers(site)
 ```
@@ -155,7 +164,7 @@ any convenient units and still land with the right size — here the 6.3 km
 between Recife and Olinda:
 
 ```{r}
-arrow <- rpic_sf('
+arrow <- pic('
 Recife: (0, 0)
 Recife_lon = -34.8711
 Recife_lat = -8.0631
@@ -169,7 +178,8 @@ arrow from Recife to Olinda thick 1.5 color "firebrick"
 "Recife" below at Recife + (0, -0.05)
 "Olinda" above at Olinda + (0, 0.05)
 "6.3 km" ljust at 0.5 <Recife, Olinda> + (0.1, 0)
-')
+') |>
+  rpic_sf()
 ggplot() + pic_layers(arrow)
 ```
 
@@ -188,13 +198,14 @@ two counties of the North Carolina dataset that ships with `sf`:
 nc <- sf::st_read(system.file("shape/nc.shp", package = "sf"), quiet = TRUE)
 two <- nc[nc$NAME %in% c("Mecklenburg", "Wake"), ]
 
-route <- rpic_sf('
+route <- pic('
 geo_scale = 50000        # one inch is 50 km
 arrowht = 0.3; arrowwid = 0.18
 arrow from Mecklenburg to Wake thick 1.5 color "firebrick"
 "Wake" above at Wake.n
 "Mecklenburg" below at Mecklenburg.s
-', features = two, name_col = "NAME")
+') |>
+  rpic_sf(features = two, name_col = "NAME")
 
 ggplot() +
   geom_sf(data = nc, fill = "grey95", colour = "grey70", linewidth = 0.2) +
@@ -224,11 +235,13 @@ the `"warnings"` attribute:
 
 ```{r}
 gj <- withCallingHandlers(
-  rpic_geojson('geo_lon = 0; geo_lat = 0
-box gradient "red" "blue"'),
+  pic('geo_lon = 0; geo_lat = 0
+box gradient "red" "blue"') |>
+    rpic_geojson(),
   rpic_geo_warning = function(w) invokeRestart("muffleWarning")
 )
 attr(gj, "warnings")[[1]]$kind   # "unsupported_style"
+rpic_warnings(gj)$kind           # the same, as a data frame
 ```
 
 A drawing that cannot be placed raises `rpic_geo_error` (an `rpic_error`),
@@ -260,7 +273,7 @@ ggplot(radius) + geom_sf(aes(fill = fill)) + scale_fill_identity()
 
 ## Interactive with mapgl
 
-`rpic_mapgl()` puts a drawing on a MapLibre map from
+`add_rpic()` puts a drawing on a MapLibre map from
 [mapgl](https://walker-data.com/mapgl/), styled by the engine's own layers
 (`rpic_maplibre_layers()`) — the ones
 [rpic.dev's Maps page](https://rpic.dev/docs/maps/) draws with, every stroke
@@ -270,13 +283,15 @@ width, dot and label **true to the ground**:
 library(mapgl)
 
 maplibre(style = carto_style("positron")) |>
-  rpic_mapgl(radius, before = "labels", text_scale = 1.5)
+  add_rpic(radius, before = "labels", text_scale = 1.5)
 ```
 
-It takes pic source, an `rpic_geojson()` result or an `rpic_sf()` data frame
-such as `radius` above, and fits the map to the drawing; `before = "labels"`
+Like mapgl's own `add_*()` verbs it takes the map first, then the drawing —
+a `pic()`, an `rpic_geojson()` result or an `rpic_sf()` data frame such as
+`radius` above — and fits the map to the drawing; `before = "labels"`
 keeps the basemap's place names above the drawing's shapes (its own labels
-stay on top), and `text_scale = 1.5` enlarges the drawing's labels. Live maps, and what
+stay on top), and `text_scale = 1.5` enlarges the drawing's labels.
+(`rpic_mapgl()` is the same function under its earlier name.) Live maps, and what
 the helper does step by step, are in the article
 [Interactive maps with mapgl](https://milkway.github.io/rpic-r/articles/mapgl.html)
 on the package website.

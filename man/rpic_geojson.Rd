@@ -13,13 +13,13 @@ rpic_geojson(
   features = NULL,
   flatten = 0.001,
   view_scale = NULL,
-  circuits = FALSE,
-  texlabels = FALSE,
+  circuits = NULL,
+  texlabels = NULL,
   name_col = "name"
 )
 }
 \arguments{
-\item{src}{pic source code.}
+\item{src}{pic source code: a \code{\link[=pic]{pic()}} object or a single string.}
 
 \item{frame}{projection frame: \code{"enu"} (local tangent plane at the anchor:
 true distances, geodesic straight lines) or \code{"mercator"} (Web Mercator:
@@ -44,10 +44,12 @@ within this distance before densification).}
 \code{geo_px = 1} (lengths in pixels, \code{geo_scale} in metres per pixel).}
 
 \item{circuits}{load the native circuit-element library (or write
-\verb{copy "circuits"} in the source itself).}
+\verb{copy "circuits"} in the source itself). \code{NULL} (the default) takes the
+\code{\link[=pic]{pic()}} object's setting, \code{FALSE} for a string.}
 
 \item{texlabels}{typeset fully \verb{$...$}-delimited labels as TeX math
-(initializer only — the source can still set \code{texlabels = 0}).}
+(initializer only — the source can still set \code{texlabels = 0}). \code{NULL}
+(the default) takes the \code{\link[=pic]{pic()}} object's setting, \code{FALSE} for a string.}
 
 \item{name_col}{for an \code{sf} \code{features}, the column holding the names.}
 }
@@ -83,7 +85,8 @@ with text an extra \code{title} point at the text's centre) whose
 properties are the simplestyle keys (\code{stroke}, \code{stroke-width}, \code{fill},
 \code{stroke-opacity}, \code{fill-opacity}, \code{title}) and the \verb{geopic:} namespace
 (\code{geopic:id}, \code{geopic:kind}, \code{geopic:text}, \code{geopic:placement}, ...);
-the full vocabulary is in the engine's \code{docs/geopic.md}.
+the full vocabulary is in the engine's \code{docs/geopic.md} (and, with the
+column names \code{\link[=rpic_sf]{rpic_sf()}} gives them, in \code{\link[=rpic_sf_names]{rpic_sf_names()}}).
 }
 \section{Features}{
 
@@ -129,10 +132,11 @@ pic errors raise the usual \code{rpic_error}.
 }
 
 \examples{
-gj <- rpic_geojson('geo_lon = -34.8711; geo_lat = -8.0631
+gj <- pic('geo_lon = -34.8711; geo_lat = -8.0631
 geo_scale = 1000     # one inch is one kilometre
 circle rad 2 at (0, 0)
-"Recife" at (0, 0)')
+"Recife" at (0, 0)') |>
+  rpic_geojson()
 attr(gj, "registration")$method   # "anchor"
 substr(gj, 1, 60)
 

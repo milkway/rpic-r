@@ -20,11 +20,13 @@
 
 #' Render pic source to an SVG string
 #'
-#' @param src pic source code.
+#' @param src pic source code: a [pic()] object or a single string.
 #' @param circuits load the native circuit-element library (or write
-#'   `copy "circuits"` in the source itself).
+#'   `copy "circuits"` in the source itself). `NULL` (the default) takes the
+#'   [pic()] object's setting, `FALSE` for a string.
 #' @param texlabels typeset fully `$...$`-delimited labels as TeX math
-#'   (initializer only — the source can still set `texlabels = 0`).
+#'   (initializer only — the source can still set `texlabels = 0`). `NULL`
+#'   (the default) takes the [pic()] object's setting, `FALSE` for a string.
 #' @return an SVG string.
 #' @section Errors:
 #' Compile errors are raised as a classed `rpic_error` condition whose
@@ -41,30 +43,35 @@
 #' ```
 #' @examples
 #' rpic_svg('box "hi"; arrow; circle "x"')
+#' pic('box "hi"; arrow; circle "x"') |> rpic_svg()
 #' tryCatch(rpic_svg("bxo"), rpic_error = function(e) e$info$line)
 #' @export
-rpic_svg <- function(src, circuits = FALSE, texlabels = FALSE) {
-  .rpic_value(rpic_svg_(src, circuits, texlabels))
+rpic_svg <- function(src, circuits = NULL, texlabels = NULL) {
+  a <- .src(src, circuits, texlabels)
+  .rpic_value(rpic_svg_(a$src, a$circuits, a$texlabels))
 }
 
 #' Render pic source to a PNG file
-#' @param src pic source code.
+#' @inheritParams rpic_svg
 #' @param file output path.
 #' @param scale raster scale (1 = 96 dpi).
-#' @param circuits load the native circuit-element library.
-#' @param texlabels typeset `$...$` labels as TeX math.
 #' @return the file path, invisibly.
+#' @examples
+#' png <- tempfile(fileext = ".png")
+#' pic('box "hi"; arrow; circle "x"') |> rpic_png(png)
 #' @export
-rpic_png <- function(src, file, scale = 2, circuits = FALSE, texlabels = FALSE) {
-  invisible(.rpic_value(rpic_png_(src, file, scale, circuits, texlabels)))
+rpic_png <- function(src, file, scale = 2, circuits = NULL, texlabels = NULL) {
+  a <- .src(src, circuits, texlabels)
+  invisible(.rpic_value(rpic_png_(a$src, file, scale, a$circuits, a$texlabels)))
 }
 
 #' Render pic source to a PDF file
 #' @inheritParams rpic_png
 #' @return the file path, invisibly.
 #' @export
-rpic_pdf <- function(src, file, circuits = FALSE, texlabels = FALSE) {
-  invisible(.rpic_value(rpic_pdf_(src, file, circuits, texlabels)))
+rpic_pdf <- function(src, file, circuits = NULL, texlabels = NULL) {
+  a <- .src(src, circuits, texlabels)
+  invisible(.rpic_value(rpic_pdf_(a$src, file, a$circuits, a$texlabels)))
 }
 
 #' Compile to a JSON bundle (as a string)
@@ -83,8 +90,9 @@ rpic_pdf <- function(src, file, circuits = FALSE, texlabels = FALSE) {
 #' @examples
 #' rpic_manifest('box; animate last box with "pop"')
 #' @export
-rpic_manifest <- function(src, circuits = FALSE, texlabels = FALSE) {
-  rpic_manifest_(src, circuits, texlabels)
+rpic_manifest <- function(src, circuits = NULL, texlabels = NULL) {
+  a <- .src(src, circuits, texlabels)
+  rpic_manifest_(a$src, a$circuits, a$texlabels)
 }
 
 #' Compile to the scene JSON (the resolved draw list)
@@ -126,7 +134,8 @@ rpic_manifest <- function(src, circuits = FALSE, texlabels = FALSE) {
 #' }
 #' @export
 rpic_scene <- function(src, flatten = NULL, outline = FALSE,
-                       circuits = FALSE, texlabels = FALSE) {
+                       circuits = NULL, texlabels = NULL) {
+  a <- .src(src, circuits, texlabels)
   flat <- 0
   if (!is.null(flatten)) {
     if (!is.numeric(flatten) || length(flatten) != 1 || !is.finite(flatten) || flatten <= 0) {
@@ -134,7 +143,7 @@ rpic_scene <- function(src, flatten = NULL, outline = FALSE,
     }
     flat <- as.numeric(flatten)
   }
-  res <- rpic_scene_(src, circuits, texlabels, flat, isTRUE(outline))
+  res <- rpic_scene_(a$src, a$circuits, a$texlabels, flat, isTRUE(outline))
   for (w in res$warnings) {
     warning(structure(
       class = c("rpic_warning", "warning", "condition"),
@@ -186,13 +195,16 @@ rpic_scene <- function(src, flatten = NULL, outline = FALSE,
 #' names(b)
 #' b$objects[[1]]$kind   # "box"
 #' b$places[[1]]$label   # "A"
-#' s <- rpic_compile("circle", scene = TRUE)$scene
-#' s$items[[1]]$kind     # "circle"
+#' s <- pic("circle") |> rpic_compile(scene = TRUE)
+#' s$scene$items[[1]]$kind     # "circle"
+#' @seealso [rpic_objects()], [rpic_places()] and [rpic_warnings()] for
+#'   `objects`, `places` and `warnings` as data frames.
 #' @export
-rpic_compile <- function(src, circuits = FALSE, texlabels = FALSE, scene = FALSE,
+rpic_compile <- function(src, circuits = NULL, texlabels = NULL, scene = FALSE,
                          flatten = NULL, outline = FALSE) {
+  a <- .src(src, circuits, texlabels)
   flat <- if (isTRUE(scene)) .rpic_flatten(flatten) else 0 # used only with the scene
-  res <- rpic_compile_(src, circuits, texlabels, isTRUE(scene), flat, isTRUE(outline))
+  res <- rpic_compile_(a$src, a$circuits, a$texlabels, isTRUE(scene), flat, isTRUE(outline))
   b <- .rpic_value(res)
   if (is.null(b$places)) b$places <- list()
   if (is.null(b$passthrough)) b$passthrough <- list()
@@ -221,6 +233,10 @@ rpic_compile <- function(src, circuits = FALSE, texlabels = FALSE, scene = FALSE
 #' ```
 #' ````
 #' Chunk options: `circuits`, `texlabels`, `scale`.
+#'
+#' In an ordinary R chunk, a [pic()] object left visible is drawn as the
+#' chunk's figure as well (its `knit_print()` method), with no engine to
+#' register.
 #'
 #' @section Maps (`geo = TRUE`):
 #' With the chunk option `geo = TRUE` the chunk is georeferenced instead of
@@ -256,10 +272,7 @@ rpic_knitr_engine <- function(options) {
   if (isTRUE(options$geo)) {
     return(.rpic_knitr_geo(options, src, circuits, texlabels))
   }
-  scale <- if (is.null(options$scale)) 2 else options$scale
-  path <- knitr::fig_path(".png", options)
-  dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
-  rpic_png(src, path, scale = scale, circuits = circuits, texlabels = texlabels)
+  path <- .knit_png(src, options, circuits = circuits, texlabels = texlabels)
   # a list `out` goes through knitr's output hooks as-is, so the figure is
   # included as a figure (a character `out` would print its path as text)
   out <- list(knitr::include_graphics(path))

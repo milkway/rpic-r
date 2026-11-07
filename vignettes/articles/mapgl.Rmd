@@ -28,7 +28,7 @@ if (!has_mapgl) {
 }
 ```
 
-## One call: `rpic_mapgl()`
+## One call: `add_rpic()`
 
 The callout from `vignette("maps")`: a dot on Recife's Marco Zero, a box a
 few hundred metres north-east of it and an arrow between them, at 400
@@ -38,7 +38,7 @@ metres per inch.
 library(rpic)
 library(mapgl)
 
-callout <- '
+callout <- pic('
 geo_lon = -34.8711
 geo_lat = -8.0631
 geo_scale = 400          # metres per inch
@@ -46,19 +46,22 @@ geo_scale = 400          # metres per inch
 dot at (0, 0) rad 0.04
 B: box "Marco Zero" "Recife" wid 1.3 ht 0.5 at (1.4, 0.9) fill 0.95
 arrow from B.sw to (0.06, 0.06) thick 1.2
-'
+')
 
 maplibre(style = carto_style("positron"), height = 400) |>
-  rpic_mapgl(callout, before = "labels", text_scale = 1.5)
+  add_rpic(callout, before = "labels", text_scale = 1.5)
 ```
 
-`rpic_mapgl(map, x)` takes a map from `maplibre()` or `mapboxgl()` and the
-drawing — pic source (passed to `rpic_geojson()` with any further
-arguments), an `rpic_geojson()` result or an `rpic_sf()` data frame — and
+`add_rpic(map, x)` takes a map from `maplibre()` or `mapboxgl()` and the
+drawing — a `pic()` or a string of pic source (passed to `rpic_geojson()`
+with any further arguments), an `rpic_geojson()` result or an `rpic_sf()`
+data frame — and
 adds three things: a GeoJSON source `"pic"` with the drawing, the six layers
 of `rpic_maplibre_layers()` and, unless `fit = FALSE`, a `fit_bounds()` on
-the drawing. It returns the map, so mapgl's own functions (controls, other
-layers, legends) carry on in the same pipe.
+the drawing. Like mapgl's `add_*()` verbs it takes the map first and
+returns it, so mapgl's own functions (controls, other layers, legends) carry
+on in the same pipe. (`rpic_mapgl()`, its earlier name, is the same
+function.)
 
 Two arguments tune how the drawing sits on the basemap:
 
@@ -88,7 +91,7 @@ not define, supplied as `features` — and a geodesic 2 km circle around
 Recife, now at one kilometre per inch:
 
 ```{r layers}
-two_cities <- '
+two_cities <- pic('
 geo_lon = -34.8711
 geo_lat = -8.0631
 geo_scale = 1000         # one inch is one kilometre
@@ -100,8 +103,8 @@ line from C.c to C.e thin
 arrow from C.c to Olinda thick 1.5 color "firebrick"
 dot at Olinda rad 0.04
 "Olinda" above at Olinda + (0, 0.08)
-'
-x <- rpic_sf(two_cities, features = list(Olinda = c(-34.8553, -8.0089)))
+')
+x <- two_cities |> rpic_sf(features = list(Olinda = c(-34.8553, -8.0089)))
 
 layers <- rpic_maplibre_layers(x)
 vapply(layers, function(l) l$id, "")
@@ -113,7 +116,7 @@ Each layer is a MapLibre style-spec object as an R list — `id`, `type`,
 the feature properties under their GeoJSON names (`stroke-width`,
 `geopic:kind`, ...). That is why the source must be the engine's GeoJSON and
 not the data frame: `mapgl::add_source()` would re-serialise the `sf` with
-its R column names (`geopic.kind`), absent values as `null` and coordinates
+its R column names (`geopic_kind`), absent values as `null` and coordinates
 rounded. `rpic_sf()` keeps the engine's text in its `"geojson"` attribute,
 and the map gets that, handed to the widget verbatim the way
 `mapgl::add_source()` stores a source:
@@ -129,7 +132,7 @@ for (l in layers) {
 fit_bounds(m, x, padding = 48, maxZoom = 19)
 ```
 
-That is `rpic_mapgl(maplibre(style = carto_style("positron")), x)` spelled
+That is `maplibre(style = carto_style("positron")) |> add_rpic(x)` spelled
 out (with `before`, the four geometry layers would get
 `add_layer(..., before_id = <the first symbol layer>)`); in practice the
 one call is enough. The layers depend only on the

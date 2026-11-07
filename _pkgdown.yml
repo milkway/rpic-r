@@ -14,29 +14,34 @@ home:
       href: https://github.com/milkway/rpic-lang
 
 reference:
-  - title: Render
-    desc: Compile pic source and render it.
+  - title: Compile and export
+    desc: >
+      Wrap pic source in `pic()` and pipe it into a renderer — SVG, PNG,
+      PDF — or into the compile bundle and the scene.
     contents:
+      - pic
       - rpic_svg
       - rpic_png
       - rpic_pdf
-  - title: Bundle and diagnostics
-    desc: The full compile bundle — SVG, animation manifest, diagnostics and warnings.
-    contents:
       - rpic_compile
       - rpic_manifest
-  - title: Scene export
-    desc: The resolved draw list as device-independent JSON — build your own backend.
-    contents:
       - rpic_scene
+  - title: Drawing data
+    desc: Objects, named places and warnings of a drawing as data frames.
+    contents:
+      - rpic_objects
+      - rpic_places
+      - rpic_warnings
   - title: Maps
-    desc: Place a pic drawing on the Earth — GeoJSON, sf and MapLibre/mapgl maps.
+    desc: Place a pic drawing on the Earth — GeoJSON, sf, ggplot2 and MapLibre/mapgl maps.
     contents:
       - rpic_geojson
       - rpic_sf
+      - rpic_sf_names
+      - autoplot.rpic_source
       - rpic_maplibre_layers
-      - rpic_mapgl
-  - title: knitr / Quarto
+      - add_rpic
+  - title: knitr
     desc: Inline pic diagrams in R Markdown and Quarto chunks.
     contents:
       - rpic_knitr_engine

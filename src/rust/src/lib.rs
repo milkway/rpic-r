@@ -359,6 +359,32 @@ fn rpic_geojson_bbox_(fc_json: &str) -> Robj {
     }
 }
 
+// The distinct property names of a GeoJSON FeatureCollection's features
+// (the real names, before any R-side mangling), for rpic_sf()'s column
+// names; `character(0)` when there are none or the text does not parse.
+#[extendr]
+fn rpic_geojson_props_(fc_json: &str) -> Vec<String> {
+    let Ok(v) = serde_json::from_str::<serde_json::Value>(fc_json) else {
+        return Vec::new();
+    };
+    let mut out: Vec<String> = Vec::new();
+    for f in v
+        .get("features")
+        .and_then(|f| f.as_array())
+        .into_iter()
+        .flatten()
+    {
+        if let Some(p) = f.get("properties").and_then(|p| p.as_object()) {
+            for k in p.keys() {
+                if !out.iter().any(|o| o == k) {
+                    out.push(k.clone());
+                }
+            }
+        }
+    }
+    out
+}
+
 // Macro to generate exports.
 extendr_module! {
     mod rpic;
@@ -371,4 +397,5 @@ extendr_module! {
     fn rpic_geojson_;
     fn rpic_maplibre_layers_;
     fn rpic_geojson_bbox_;
+    fn rpic_geojson_props_;
 }

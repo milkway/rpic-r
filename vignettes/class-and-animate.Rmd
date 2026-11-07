@@ -26,7 +26,7 @@ statement form that reuses pic's object references (labels, `last line`,
 ```{r}
 library(rpic)
 
-svg <- rpic_svg('
+svg <- pic('
 boxht = 0.4; boxwid = 0.9
 box class "service" "api"
 arrow
@@ -34,7 +34,8 @@ box class "service hot" "billing"
 arrow
 box class "storage" "database"
 class last arrow "dataflow"
-')
+') |>
+  rpic_svg()
 ```
 
 Each class lands on the shape's SVG group (`<g id="sN" class="…">`). The
@@ -71,7 +72,7 @@ no class existed.
 without touching the static rendering:
 
 ```{r}
-bundle <- rpic_manifest('
+bundle <- pic('
 boxht = 0.35; boxwid = 0.8
 A: box "build"
 arrow
@@ -81,7 +82,8 @@ box "ship"
 animate A with "pop"
 animate 2nd box with "fade"
 animate 3rd box with "draw" for 0.8
-')
+') |>
+  rpic_manifest()
 ```
 
 The drawing itself is the ordinary static SVG:
@@ -106,7 +108,9 @@ running live.
 
 Unknown effect names are accepted but reported: the bundle's `warnings`
 array flags them (`unknown_animation_effect`, with the supported list), the
-same structured-diagnostic shape used by compile errors.
+same structured-diagnostic shape used by compile errors. `rpic_warnings()`
+reads them as a data frame, one row per warning:
+`pic(src) |> rpic_warnings()`.
 
 ## Both layers together
 

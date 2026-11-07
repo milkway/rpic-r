@@ -4,22 +4,30 @@
 \alias{rpic_png}
 \title{Render pic source to a PNG file}
 \usage{
-rpic_png(src, file, scale = 2, circuits = FALSE, texlabels = FALSE)
+rpic_png(src, file, scale = 2, circuits = NULL, texlabels = NULL)
 }
 \arguments{
-\item{src}{pic source code.}
+\item{src}{pic source code: a \code{\link[=pic]{pic()}} object or a single string.}
 
 \item{file}{output path.}
 
 \item{scale}{raster scale (1 = 96 dpi).}
 
-\item{circuits}{load the native circuit-element library.}
+\item{circuits}{load the native circuit-element library (or write
+\verb{copy "circuits"} in the source itself). \code{NULL} (the default) takes the
+\code{\link[=pic]{pic()}} object's setting, \code{FALSE} for a string.}
 
-\item{texlabels}{typeset \verb{$...$} labels as TeX math.}
+\item{texlabels}{typeset fully \verb{$...$}-delimited labels as TeX math
+(initializer only — the source can still set \code{texlabels = 0}). \code{NULL}
+(the default) takes the \code{\link[=pic]{pic()}} object's setting, \code{FALSE} for a string.}
 }
 \value{
 the file path, invisibly.
 }
 \description{
 Render pic source to a PNG file
+}
+\examples{
+png <- tempfile(fileext = ".png")
+pic('box "hi"; arrow; circle "x"') |> rpic_png(png)
 }

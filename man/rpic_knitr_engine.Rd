@@ -24,6 +24,11 @@ resistor(A,B)
 
 Chunk options: \code{circuits}, \code{texlabels}, \code{scale}.
 }
+\details{
+In an ordinary R chunk, a \code{\link[=pic]{pic()}} object left visible is drawn as the
+chunk's figure as well (its \code{knit_print()} method), with no engine to
+register.
+}
 \section{Maps (\code{geo = TRUE})}{
 
 With the chunk option \code{geo = TRUE} the chunk is georeferenced instead of

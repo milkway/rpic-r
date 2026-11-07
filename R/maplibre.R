@@ -21,7 +21,7 @@
 #' The layers read the feature properties under their GeoJSON names
 #' (`stroke-width`, `geopic:kind`, ...), so the source they draw must be the
 #' engine's GeoJSON, not a re-serialised `sf` data frame (whose columns are
-#' `geopic.kind`, ...). [rpic_mapgl()] takes care of that.
+#' `geopic_kind`, ...: [rpic_sf_names()]). [add_rpic()] takes care of that.
 #'
 #' @param x the drawing: the result of [rpic_geojson()] (or any GeoJSON
 #'   FeatureCollection text: a string of class `"json"`, or one whose first
@@ -30,8 +30,8 @@
 #'   `sf` data frame
 #'   from [rpic_sf()] (its `"geojson"` attribute, the engine's own text, is
 #'   used — not its rows, so an `sf` that has lost rows since is an error and
-#'   edited columns are not seen), or pic source code, which is
-#'   georeferenced with `rpic_geojson(x, ...)`.
+#'   edited columns are not seen), or pic source — a [pic()] object or a
+#'   string — which is georeferenced with `rpic_geojson(x, ...)`.
 #' @param ... arguments passed to [rpic_geojson()] when `x` is pic source.
 #' @param text_scale multiplies every label's font size (`pic-text` and
 #'   `pic-title`): a finite number in (0, 16]. The default, 1, keeps the
@@ -51,13 +51,14 @@
 #' A JSON text that is not a FeatureCollection raises an `rpic_geo_error`
 #' with `e$info$kind == "invalid_geojson"`; a `text_scale` that is not a
 #' single number in (0, 16] one with `e$info$kind == "invalid_options"`.
-#' @seealso [rpic_mapgl()]; the article
+#' @seealso [add_rpic()]; the article
 #'   [Interactive maps with mapgl](https://milkway.github.io/rpic-r/articles/mapgl.html).
 #' @examples
-#' layers <- rpic_maplibre_layers('geo_lon = -34.8711; geo_lat = -8.0631
+#' layers <- pic('geo_lon = -34.8711; geo_lat = -8.0631
 #' geo_scale = 1000
 #' circle rad 2 at (0, 0)
-#' "Recife" at (0, 0)')
+#' "Recife" at (0, 0)') |>
+#'   rpic_maplibre_layers()
 #' vapply(layers, function(l) l$id, "")
 #' layers[[2]]$paint$`line-width`[1:3]   # "interpolate", exponential 2, zoom
 #'
@@ -74,8 +75,11 @@ rpic_maplibre_layers <- function(x, ..., text_scale = 1) {
 
 #' Draw a pic drawing on a mapgl map
 #'
-#' Adds a georeferenced pic drawing to a [mapgl](https://walker-data.com/mapgl/)
-#' map — [mapgl::maplibre()] or [mapgl::mapboxgl()]: a GeoJSON source `"pic"`
+#' `add_rpic()` adds a georeferenced pic drawing to a
+#' [mapgl](https://walker-data.com/mapgl/) map — [mapgl::maplibre()] or
+#' [mapgl::mapboxgl()] — as mapgl's own `add_*()` verbs do, map first, so it
+#' joins a pipe: `maplibre() |> add_rpic(pic(src))`. It adds a GeoJSON
+#' source `"pic"`
 #' holding the engine's FeatureCollection, the six layers of
 #' [rpic_maplibre_layers()] (added with [mapgl::add_layer()]) and, when
 #' `fit`, a [mapgl::fit_bounds()] on the drawing (48 px of padding, zoom 19
@@ -109,11 +113,14 @@ rpic_maplibre_layers <- function(x, ..., text_scale = 1) {
 #'
 #' The source is the engine's GeoJSON text, handed to the widget verbatim.
 #' (`mapgl::add_source()` takes only an `sf` object, which it re-serialises
-#' with the `sf` column names — `geopic.kind` instead of the `geopic:kind`
-#' the layers read — or a URL; so `rpic_mapgl()` registers the source in the
+#' with the `sf` column names — `geopic_kind` instead of the `geopic:kind`
+#' the layers read — or a URL; so `add_rpic()` registers the source in the
 #' widget itself, the way `add_source()` does.) A map holds one pic drawing:
 #' the source id and the layer ids are fixed by the engine, so a map that
 #' already has a source `"pic"` or one of the six layer ids is an error.
+#'
+#' `rpic_mapgl()` is the same function under its first name (an alias kept
+#' for code written against the development version).
 #'
 #' @param map a map from [mapgl::maplibre()] or [mapgl::mapboxgl()] (Shiny
 #'   proxies are not supported).
@@ -128,10 +135,11 @@ rpic_maplibre_layers <- function(x, ..., text_scale = 1) {
 #'   [Interactive maps with mapgl](https://milkway.github.io/rpic-r/articles/mapgl.html).
 #' @examples
 #' if (requireNamespace("mapgl", quietly = TRUE)) {
-#'   src <- 'geo_lon = -34.8711; geo_lat = -8.0631; geo_scale = 1000
+#'   src <- pic('geo_lon = -34.8711; geo_lat = -8.0631; geo_scale = 1000
 #'   circle rad 2 at (0, 0) fill 0.9
-#'   "Recife" at (0, 0)'
-#'   m <- rpic_mapgl(mapgl::maplibre(style = mapgl::carto_style("positron")), src)
+#'   "Recife" at (0, 0)')
+#'   m <- mapgl::maplibre(style = mapgl::carto_style("positron")) |>
+#'     add_rpic(src)
 #'   vapply(m$x$layers, function(l) l$id, "")
 #'
 #'   # shapes under the basemap's labels, larger labels; a style given as a
@@ -140,17 +148,17 @@ rpic_maplibre_layers <- function(x, ..., text_scale = 1) {
 #'     list(id = "water", type = "fill"),
 #'     list(id = "place-names", type = "symbol")
 #'   ))
-#'   m <- rpic_mapgl(mapgl::maplibre(style = style), src,
-#'                   before = "labels", text_scale = 1.5)
+#'   m <- mapgl::maplibre(style = style) |>
+#'     add_rpic(src, before = "labels", text_scale = 1.5)
 #'   vapply(m$x$layers, function(l) if (is.null(l$before_id)) NA_character_ else l$before_id, "")
 #' }
 #' @export
-rpic_mapgl <- function(map, x, ..., before = NULL, text_scale = 1, fit = TRUE) {
+add_rpic <- function(map, x, ..., before = NULL, text_scale = 1, fit = TRUE) {
   if (!.has_mapgl()) {
-    stop("rpic_mapgl() needs the 'mapgl' package: install.packages(\"mapgl\")", call. = FALSE)
+    stop("add_rpic() needs the 'mapgl' package: install.packages(\"mapgl\")", call. = FALSE)
   }
   if (inherits(map, c("maplibre_proxy", "mapboxgl_proxy"))) {
-    stop("rpic_mapgl() does not support mapgl proxies; build the map with it instead",
+    stop("add_rpic() does not support mapgl proxies; build the map with it instead",
          call. = FALSE)
   }
   if (!inherits(map, c("maplibregl", "mapboxgl"))) {
@@ -202,6 +210,10 @@ rpic_mapgl <- function(map, x, ..., before = NULL, text_scale = 1, fit = TRUE) {
   map
 }
 
+#' @rdname add_rpic
+#' @export
+rpic_mapgl <- add_rpic
+
 .has_mapgl <- function() requireNamespace("mapgl", quietly = TRUE)
 
 # The drawing as GeoJSON text (class "json"): an rpic_geojson() result as
@@ -226,7 +238,7 @@ rpic_mapgl <- function(map, x, ..., before = NULL, text_scale = 1, fit = TRUE) {
     if (!is.null(n) && n != nrow(x)) {
       stop(sprintf(paste0(
         "this sf data frame has %d rows but the engine GeoJSON it was read from has %d ",
-        "features: rpic_maplibre_layers() and rpic_mapgl() use that GeoJSON, not the rows; ",
+        "features: rpic_maplibre_layers() and add_rpic() use that GeoJSON, not the rows; ",
         "filter in the pic source (or pass rpic_geojson()'s result) instead"
       ), nrow(x), n), call. = FALSE)
     }
@@ -236,7 +248,8 @@ rpic_mapgl <- function(map, x, ..., before = NULL, text_scale = 1, fit = TRUE) {
   # unclassed GeoJSON text (read from a file, or as.character() of a result)
   # starts with `{` (or `[`); pic source would only do so by opening with a
   # `{ ... }` group (documented: put any statement before it)
-  if (is.character(x) && !inherits(x, "json") && length(x) == 1 && !is.na(x) &&
+  if (is.character(x) && !inherits(x, c("json", "rpic_source")) && length(x) == 1 &&
+      !is.na(x) &&
       grepl("^[{[]", trimws(x))) {
     x <- structure(x, class = "json")
   }
@@ -264,7 +277,7 @@ rpic_mapgl <- function(map, x, ..., before = NULL, text_scale = 1, fit = TRUE) {
   }
   stop(paste0(
     "`x` must be an rpic_geojson() result, an rpic_sf() result or pic source ",
-    "(a single string)"
+    "(a pic() object or a single string)"
   ), call. = FALSE)
 }
 
@@ -330,14 +343,14 @@ rpic_mapgl <- function(map, x, ..., before = NULL, text_scale = 1, fit = TRUE) {
       first <- added$id[added$type %in% "symbol"]
       if (length(first)) return(first[1])
       warning(sprintf(
-        "rpic_mapgl(): could not read the map's style to find its labels (%s); the pic layers go on top",
+        "add_rpic(): could not read the map's style to find its labels (%s); the pic layers go on top",
         style$error), call. = FALSE)
       return(NULL)
     }
     # cannot check: trust the id, but say so (MapLibre drops the geometry
     # layers at runtime when the map has no such layer)
     warning(sprintf(paste0(
-      "rpic_mapgl(): could not read the map's style to check that it has a layer \"%s\" ",
+      "add_rpic(): could not read the map's style to check that it has a layer \"%s\" ",
       "(%s); using it as given; if the map has no such layer, MapLibre drops the pic ",
       "geometry layers"), before, style$error), call. = FALSE)
     return(before)
@@ -350,7 +363,7 @@ rpic_mapgl <- function(map, x, ..., before = NULL, text_scale = 1, fit = TRUE) {
   }
   if (before %in% all$id) return(before)
   warning(sprintf(
-    "rpic_mapgl(): the map's style has no layer \"%s\"; the pic layers go on top", before
+    "add_rpic(): the map's style has no layer \"%s\"; the pic layers go on top", before
   ), call. = FALSE)
   NULL
 }

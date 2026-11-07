@@ -23,4 +23,6 @@ rpic_maplibre_layers_ <- function(fc_json, opts_json) .Call(wrap__rpic_maplibre_
 
 rpic_geojson_bbox_ <- function(fc_json) .Call(wrap__rpic_geojson_bbox_, fc_json)
 
+rpic_geojson_props_ <- function(fc_json) .Call(wrap__rpic_geojson_props_, fc_json)
+
 # nolint end

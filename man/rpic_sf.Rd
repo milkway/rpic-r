@@ -7,7 +7,7 @@
 rpic_sf(src, ...)
 }
 \arguments{
-\item{src}{pic source code.}
+\item{src}{pic source code: a \code{\link[=pic]{pic()}} object or a single string.}
 
 \item{...}{arguments passed to \code{\link[=rpic_geojson]{rpic_geojson()}} (\code{frame}, \code{anchor},
 \code{scale}, \code{bearing}, \code{features}, \code{flatten}, \code{view_scale}, \code{circuits},
@@ -22,28 +22,29 @@ feature, ready for \code{\link[ggplot2:geom_sf]{ggplot2::geom_sf()}}, \code{mapg
 consumer.
 }
 \details{
-Columns are the feature properties. The simplestyle keys keep their names
-(\code{stroke}, \code{stroke-width}, \code{fill}, \code{stroke-opacity}, \code{fill-opacity},
-\code{title}; use backticks for the hyphenated ones), and every \verb{geopic:<name>}
-property becomes \verb{geopic.<name>} (\code{geopic.id}, \code{geopic.kind},
-\code{geopic.text}, \code{geopic.placement}, \code{geopic.font_size}, ...) — the colon
-is awkward in R column names. A property no feature carries is absent;
-one only some features carry is \code{NA} elsewhere. The geometry column is
-\code{geometry}, of mixed type (polygons for boxes and circles, line strings
-for lines and arrows, points for dots and text).
+Columns are the feature properties, in snake_case: every \code{:} and \code{-} of
+a GeoJSON property name becomes \verb{_} (\code{\link[=rpic_sf_names]{rpic_sf_names()}}) — \code{stroke},
+\code{stroke_width}, \code{fill}, \code{stroke_opacity}, \code{fill_opacity}, \code{title}, and
+\code{geopic_id}, \code{geopic_kind}, \code{geopic_text}, \code{geopic_placement},
+\code{geopic_font_size}, ... for the \verb{geopic:} namespace — so every column is a
+syntactic name (\code{x$geopic_kind}, \code{aes(fill = fill)}, \code{dplyr::filter()}).
+A property no feature carries is absent; one only some features carry is
+\code{NA} elsewhere. The geometry column is \code{geometry}, of mixed type
+(polygons for boxes and circles, line strings for lines and arrows,
+points for dots and text).
 
 A shape with text (\verb{box "Marco Zero"}) is followed by a \code{title} row: a
-point at the centre of its text, \code{geopic.kind == "title"}, \code{geopic.id}
-\code{"<id>:title"} and \code{geopic.for} naming the shape's \code{geopic.id}, carrying
-the text in \code{title} and \code{geopic.text} (engine 0.15.1; MapLibre's
+point at the centre of its text, \code{geopic_kind == "title"}, \code{geopic_id}
+\code{"<id>:title"} and \code{geopic_for} naming the shape's \code{geopic_id}, carrying
+the text in \code{title} and \code{geopic_text} (engine 0.15.1; MapLibre's
 \code{pic-title} layer draws these). Filter them out
-(\code{x[x$geopic.kind != "title", ]}) to keep one row per shape.
+(\code{x[x$geopic_kind != "title", ]}) to keep one row per shape.
 
 The \code{"warnings"} and \code{"registration"} attributes of \code{\link[=rpic_geojson]{rpic_geojson()}} are
 carried over (as attributes of the data frame; \code{sf} operations may drop
 them), and warnings are raised the same way. The \code{"geojson"} attribute
 keeps the engine's own GeoJSON text (the \code{\link[=rpic_geojson]{rpic_geojson()}} result the data
-frame was read from), which \code{\link[=rpic_maplibre_layers]{rpic_maplibre_layers()}} and \code{\link[=rpic_mapgl]{rpic_mapgl()}}
+frame was read from), which \code{\link[=rpic_maplibre_layers]{rpic_maplibre_layers()}} and \code{\link[=add_rpic]{add_rpic()}}
 use instead of re-serialising the data frame.
 }
 \section{Requirements}{
@@ -53,12 +54,14 @@ Needs the \code{sf} package: \code{install.packages("sf")}.
 
 \examples{
 if (requireNamespace("sf", quietly = TRUE)) {
-  x <- rpic_sf('geo_lon = -34.8711; geo_lat = -8.0631; geo_scale = 400
+  x <- pic('geo_lon = -34.8711; geo_lat = -8.0631; geo_scale = 400
   B: box "Marco Zero" at (1, 1) fill 0.95
-  arrow from B.sw to (0, 0)')
-  x[, c("geopic.kind", "fill")]
+  arrow from B.sw to (0, 0)') |>
+    rpic_sf()
+  x[, c("geopic_kind", "fill", "stroke_width")]
 }
 }
 \seealso{
-\code{vignette("maps")}.
+\code{\link[=rpic_sf_names]{rpic_sf_names()}} for the column names; \code{\link[=autoplot.rpic_source]{autoplot.rpic_source()}}
+for a quick \code{ggplot2} map; \code{vignette("maps")}.
 }
