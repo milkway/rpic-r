@@ -338,7 +338,7 @@ rpic_mapgl <- function(map, x, ..., before = NULL, text_scale = 1, fit = TRUE) {
     # layers at runtime when the map has no such layer)
     warning(sprintf(paste0(
       "rpic_mapgl(): could not read the map's style to check that it has a layer \"%s\" ",
-      "(%s); using it as given — if the map has no such layer, MapLibre drops the pic ",
+      "(%s); using it as given; if the map has no such layer, MapLibre drops the pic ",
       "geometry layers"), before, style$error), call. = FALSE)
     return(before)
   }
