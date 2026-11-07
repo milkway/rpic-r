@@ -36,7 +36,8 @@ object for the source, pipe-first verbs, snake_case columns, data frames.
   `fill_opacity`, ... `rpic_sf_names()` is the documented mapping, with the
   full vocabulary table. The GeoJSON text (and so the MapLibre layers) keeps
   the engine's names.
-* `add_rpic(map, x, ..., before = NULL, text_scale = 1, fit = TRUE)` is the
+* `add_rpic(map, x, ..., before = NULL, text_scale = 1, font = "style",
+  fit = TRUE)` is the
   mapgl adder, map first like mapgl's own `add_*()` verbs:
   `maplibre() |> add_rpic(pic(src))`. `rpic_mapgl()` stays as an alias (the
   same function).
@@ -91,6 +92,14 @@ object for the source, pipe-first verbs, snake_case columns, data frames.
   in (0, 16], default 1 (unchanged output). Strokes and dots keep their
   ground sizes. Out of range or not a number: an `rpic_geo_error` with
   `e$info$kind == "invalid_options"`.
+* `add_rpic()` gains `font`: the drawing's labels (`pic-text`,
+  `pic-title`) use the style's own font by default (`"style"`: the most
+  common upright Regular/Medium `text-font` stack among its symbol layers —
+  CARTO's positron: Montserrat Medium, Open Sans Regular, ...). The engine's
+  "Noto Sans Regular", as a glyph server like CARTO's serves it, has other
+  vertical metrics, and a label placed `above` a line sat on it. `"spec"`
+  keeps the engine's font; a character vector is an explicit stack. An
+  unreadable style keeps the engine's font, without a warning of its own.
 * `add_rpic()` gains `before`: `"labels"` puts the drawing's shapes
   (`pic-fill`, `pic-stroke`, `pic-stroke-dashed`, `pic-dot`) under the
   basemap's labels — before the style's layer `labels`, else at the start

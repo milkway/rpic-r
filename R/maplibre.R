@@ -124,6 +124,21 @@ rpic_maplibre_layers <- function(x, ..., text_scale = 1) {
 #' the source id and the layer ids are fixed by the engine, so a map that
 #' already has a source `"pic"` or one of the six layer ids is an error.
 #'
+#' `font` sets the `text-font` of the drawing's labels (`pic-text`,
+#' `pic-title`). The font decides where a label sits: MapLibre places the
+#' text box by the glyphs' vertical metrics, and a glyph server's
+#' "Noto Sans Regular" (CARTO's, for one) is not the one the engine's
+#' anchors were measured with, so a label meant to sit above a line can
+#' land on it. With `"style"` (the default) the labels use the style's own
+#' font: the most common `text-font` stack among its `symbol` layers,
+#' upright `Regular`/`Medium` stacks preferred over bold and italic ones
+#' (CARTO's positron: `Montserrat Medium, Open Sans Regular, ...`). The
+#' style is read as for `before` (a URL is fetched once per session); when
+#' it cannot be read or has no such stack, the engine's font is kept,
+#' without a warning of its own. `"spec"` keeps the engine's
+#' `"Noto Sans Regular"`; any other character vector is the font stack
+#' itself (names the style's glyph server must serve).
+#'
 #' `rpic_mapgl()` is the same function under its first name (an alias kept
 #' for code written against the development version).
 #'
@@ -132,6 +147,9 @@ rpic_maplibre_layers <- function(x, ..., text_scale = 1) {
 #' @inheritParams rpic_maplibre_layers
 #' @param before where the geometry layers go: `NULL` (on top), `"labels"`
 #'   (under the basemap's labels) or a layer id; see Details.
+#' @param font the labels' font stack: `"style"` (the style's own font),
+#'   `"spec"` (the engine's) or a character vector of font names; see
+#'   Details.
 #' @param fit zoom the map to the drawing's bounding box.
 #' @return `map`, with the source and the layers added (pipe-friendly).
 #' @section Requirements:
@@ -158,7 +176,8 @@ rpic_maplibre_layers <- function(x, ..., text_scale = 1) {
 #'   vapply(m$x$layers, function(l) if (is.null(l$before_id)) NA_character_ else l$before_id, "")
 #' }
 #' @export
-add_rpic <- function(map, x, ..., before = NULL, text_scale = 1, fit = TRUE) {
+add_rpic <- function(map, x, ..., before = NULL, text_scale = 1, font = "style",
+                     fit = TRUE) {
   if (!.has_mapgl()) {
     stop("add_rpic() needs the 'mapgl' package: install.packages(\"mapgl\")", call. = FALSE)
   }
@@ -172,6 +191,10 @@ add_rpic <- function(map, x, ..., before = NULL, text_scale = 1, fit = TRUE) {
   if (!is.null(before) && (!is.character(before) || length(before) != 1 ||
                             is.na(before) || !nzchar(before))) {
     stop("`before` must be NULL, \"labels\" or a layer id (a single string)", call. = FALSE)
+  }
+  if (!is.character(font) || !length(font) || anyNA(font) || !all(nzchar(font))) {
+    stop("`font` must be \"style\", \"spec\" or a font stack (a character vector)",
+         call. = FALSE)
   }
   opts <- .layer_options(text_scale, sys.call())
   gj <- .geo_text(x, ..., call = sys.call())
@@ -196,9 +219,20 @@ add_rpic <- function(map, x, ..., before = NULL, text_scale = 1, fit = TRUE) {
   map$x$sources <- c(map$x$sources, list(list(
     id = source, type = "geojson", data = data, generateId = TRUE
   )))
+  # the style is read at most once per call (a failed download is not
+  # cached, and would otherwise be retried for `before` and `font`)
+  style <- NULL
+  read_style <- function() {
+    if (is.null(style)) style <<- .style_layers(map$x$style)
+    style
+  }
   # resolved before our layers join map$x$layers (so they are never a target)
-  below <- .before_id(map, before)
+  below <- .before_id(map, before, read_style)
+  stack <- .text_font(font, read_style)
   for (l in layers) {
+    if (!is.null(stack) && l$id %in% .pic_text_layers) {
+      l$layout[["text-font"]] <- as.list(stack)
+    }
     # the drawing's own labels always go on top (the JS attach() rule)
     b <- if (l$id %in% .pic_text_layers) NULL else below
     map <- mapgl::add_layer(map, id = l$id, type = l$type, source = l$source,
@@ -337,13 +371,13 @@ rpic_mapgl <- add_rpic
 # when the style can be read. The candidates are the style's layers, then the
 # layers already added to the map (both precede ours at load); the added ones
 # are consulted even when the style cannot be read.
-.before_id <- function(map, before) {
+.before_id <- function(map, before, read_style = function() .style_layers(map$x$style)) {
   if (is.null(before)) return(NULL)
   added <- .layer_table(map$x$layers)
   # the style is read only when the added layers do not settle it
   if (before == "labels" && "labels" %in% added$id) return("labels")
   if (before != "labels" && before %in% added$id) return(before)
-  style <- .style_layers(map$x$style)
+  style <- read_style()
   if (!is.null(style$error)) {
     if (before == "labels") {
       # the added layers come after the (unknown) style: their trailing
@@ -393,6 +427,42 @@ rpic_mapgl <- add_rpic
   if (length(after)) after[1] else NULL
 }
 
+# The `text-font` stack for the drawing's label layers (NULL = keep the
+# spec's): "spec" keeps it; "style" = the style's own font, the most common
+# plain `text-font` array among its symbol layers, upright Regular/Medium
+# stacks (first name) preferred over bold or italic ones, ties to the first
+# in style order; an unreadable style or one without such stacks keeps the
+# spec's, silently (`before` already warns when it needed the style). Any
+# other vector is the stack itself.
+.text_font <- function(font, read_style) {
+  if (identical(font, "spec")) return(NULL)
+  if (!identical(font, "style")) return(font)
+  style <- read_style()
+  if (!is.null(style$error)) return(NULL)
+  stacks <- list()
+  for (l in style$layers) {
+    if (!is.list(l) || !identical(as.character(l$type)[1], "symbol")) next
+    f <- if (is.list(l$layout)) l$layout[["text-font"]]
+    if (is.list(f)) {
+      if (!all(vapply(f, function(v) is.character(v) && length(v) == 1, NA))) next
+      f <- unlist(f)
+    }
+    # an expression (`["literal", ...]`, `["step", ...]`) is not a stack
+    if (is.character(f) && length(f) && !anyNA(f) && all(nzchar(f)) &&
+        !grepl("^[a-z-]+$", f[1])) {
+      stacks[[length(stacks) + 1]] <- f
+    }
+  }
+  if (!length(stacks)) return(NULL)
+  keys <- vapply(stacks, function(f) paste(f, collapse = "\u001f"), "")
+  upright <- vapply(stacks, function(f) {
+    grepl("Regular|Medium", f[1]) && !grepl("Italic", f[1])
+  }, NA)
+  pool <- if (any(upright)) which(upright) else seq_along(stacks)
+  counts <- table(factor(keys[pool], levels = unique(keys[pool])))
+  stacks[[pool[match(names(counts)[which.max(counts)], keys[pool])]]]
+}
+
 # Layers as a table of `id` and `type`, without the layers that have no id
 # (never a `before_id`) unless `keep_unnamed` (they still count as geometry
 # or symbol when finding the label block).
@@ -434,13 +504,20 @@ rpic_mapgl <- add_rpic
 .style_list_layers <- function(js) {
   layers <- if (is.list(js)) js$layers
   if (is.data.frame(layers)) {
-    # fromJSON(simplifyVector = TRUE): one row per layer; only `id` and
-    # `type` are read
+    # fromJSON(simplifyVector = TRUE): one row per layer; only `id`, `type`
+    # and `layout$text-font` are read
     col <- function(k) if (k %in% names(layers)) as.character(layers[[k]]) else
       rep(NA_character_, nrow(layers))
     id <- col("id")
     type <- col("type")
-    layers <- lapply(seq_len(nrow(layers)), function(i) list(id = id[i], type = type[i]))
+    lay <- layers[["layout"]]
+    fonts <- if (is.data.frame(lay) && "text-font" %in% names(lay)) lay[["text-font"]]
+    layers <- lapply(seq_len(nrow(layers)), function(i) {
+      l <- list(id = id[i], type = type[i])
+      f <- if (is.list(fonts)) fonts[[i]]
+      if (is.character(f)) l$layout <- list(`text-font` = f)
+      l
+    })
   }
   if (!is.list(layers)) return(list(error = "the style has no `layers` array"))
   list(layers = layers)

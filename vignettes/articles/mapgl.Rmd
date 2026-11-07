@@ -87,6 +87,12 @@ Two arguments tune how the drawing sits on the basemap:
   ground sizes. `rpic_maplibre_layers(x, text_scale = 1.5)` gives the same
   layers.
 
+A third, `font`, needs no tuning here: by default (`font = "style"`) the
+drawing's labels use the basemap's own font — positron's Montserrat — so
+a label placed `above` a line sits above it; with the glyph server's Noto
+Sans (`font = "spec"`, the engine's choice) its different vertical metrics
+put "2 km" on the line.
+
 ## What the helper does: `rpic_sf()` and `rpic_maplibre_layers()`
 
 The arrow between Recife and Olinda — two places the source uses but does

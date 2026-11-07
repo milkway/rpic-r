@@ -235,6 +235,7 @@ test_that("add_rpic() is the mapgl adder; rpic_mapgl() its alias", {
   expect_identical(rpic_mapgl, add_rpic)
   skip_if_not_installed("mapgl")
   src <- pic("geo_lon = 0; geo_lat = 0; geo_scale = 1000\ncircle rad 1")
+  local_mocked_bindings(.fetch_style = function(url, ...) stop("offline (tests)"))
   m <- mapgl::maplibre() |> add_rpic(src, fit = FALSE)
   expect_identical(vapply(m$x$layers, function(l) l$id, ""),
                    c("pic-fill", "pic-stroke", "pic-stroke-dashed", "pic-dot", "pic-text",

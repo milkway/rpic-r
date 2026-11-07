@@ -5,9 +5,25 @@
 \alias{rpic_mapgl}
 \title{Draw a pic drawing on a mapgl map}
 \usage{
-add_rpic(map, x, ..., before = NULL, text_scale = 1, fit = TRUE)
+add_rpic(
+  map,
+  x,
+  ...,
+  before = NULL,
+  text_scale = 1,
+  font = "style",
+  fit = TRUE
+)
 
-rpic_mapgl(map, x, ..., before = NULL, text_scale = 1, fit = TRUE)
+rpic_mapgl(
+  map,
+  x,
+  ...,
+  before = NULL,
+  text_scale = 1,
+  font = "style",
+  fit = TRUE
+)
 }
 \arguments{
 \item{map}{a map from \code{\link[mapgl:maplibre]{mapgl::maplibre()}} or \code{\link[mapgl:mapboxgl]{mapgl::mapboxgl()}} (Shiny
@@ -36,6 +52,10 @@ scale is applied inside the engine's sizing (\code{LayerOptions}, the
 engine's DECISIONS G11), so the upper \code{text-size} zoom stop still keeps
 labels within MapLibre's 255 px limit — the same output as
 \code{rpic --geojson --maplibre --text-scale}.}
+
+\item{font}{the labels' font stack: \code{"style"} (the style's own font),
+\code{"spec"} (the engine's) or a character vector of font names; see
+Details.}
 
 \item{fit}{zoom the map to the drawing's bounding box.}
 }
@@ -93,6 +113,21 @@ the layers read — or a URL; so \code{add_rpic()} registers the source in the
 widget itself, the way \code{add_source()} does.) A map holds one pic drawing:
 the source id and the layer ids are fixed by the engine, so a map that
 already has a source \code{"pic"} or one of the six layer ids is an error.
+
+\code{font} sets the \code{text-font} of the drawing's labels (\code{pic-text},
+\code{pic-title}). The font decides where a label sits: MapLibre places the
+text box by the glyphs' vertical metrics, and a glyph server's
+"Noto Sans Regular" (CARTO's, for one) is not the one the engine's
+anchors were measured with, so a label meant to sit above a line can
+land on it. With \code{"style"} (the default) the labels use the style's own
+font: the most common \code{text-font} stack among its \code{symbol} layers,
+upright \code{Regular}/\code{Medium} stacks preferred over bold and italic ones
+(CARTO's positron: \verb{Montserrat Medium, Open Sans Regular, ...}). The
+style is read as for \code{before} (a URL is fetched once per session); when
+it cannot be read or has no such stack, the engine's font is kept,
+without a warning of its own. \code{"spec"} keeps the engine's
+\code{"Noto Sans Regular"}; any other character vector is the font stack
+itself (names the style's glyph server must serve).
 
 \code{rpic_mapgl()} is the same function under its first name (an alias kept
 for code written against the development version).

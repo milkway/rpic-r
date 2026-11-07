@@ -6,6 +6,10 @@ read_geojson <- function(name) {
   structure(paste(readLines(test_path("fixtures", "geo", paste0(name, ".geojson")),
                             warn = FALSE), collapse = "\n"), class = "json")
 }
+# No test downloads a style: mapgl::maplibre()'s default is a CARTO URL,
+# which add_rpic(font = "style") reads. Tests that need a style mock it.
+local_mocked_bindings(.fetch_style = function(url, ...) stop("offline (tests)"))
+
 snapshot <- function(name) {
   jsonlite::fromJSON(test_path("fixtures", "geo", "maplibre", paste0(name, ".layers.json")),
                      simplifyVector = FALSE)
@@ -441,7 +445,7 @@ test_that("add_rpic before = <layer id>", {
   local_mocked_bindings(.fetch_style = function(url, ...) stop("must not be called"))
   m2 <- mapgl::add_layer(mapgl::maplibre(style = "https://example.org/s.json"),
                          "mine", "fill", source = "x")
-  m2 <- add_rpic(m2, src, before = "mine")
+  m2 <- add_rpic(m2, src, before = "mine", font = "spec")  # font = "style" reads the style
   expect_identical(before_ids(m2)[-1], c(rep("mine", 4), NA, NA))
   # an id the style does not have: a warning, on top
   expect_warning(m3 <- add_rpic(mapgl::maplibre(style = st), src, before = "nope"),
@@ -484,4 +488,120 @@ test_that("add_rpic refuses what is not a mapgl map", {
 test_that("add_rpic without mapgl says how to install it", {
   local_mocked_bindings(.has_mapgl = function() FALSE)
   expect_error(add_rpic(NULL, "box"), "install.packages\\(\"mapgl\"\\)")
+})
+
+# A CARTO-positron-shaped style: SemiBold stacks are the most common, the
+# upright Medium/Regular one is the body font.
+carto_like <- function() {
+  stk <- function(...) list(...)
+  style_list(
+    list(id = "water", type = "fill"),
+    list(id = "waterway_label", type = "symbol",
+         layout = list(`text-font` = stk("Montserrat Regular Italic", "Open Sans Italic",
+                                         "Noto Sans Regular"))),
+    list(id = "road", type = "line"),
+    list(id = "place_suburbs", type = "symbol",
+         layout = list(`text-font` = stk("Montserrat Medium", "Open Sans Regular",
+                                         "Noto Sans Regular"))),
+    list(id = "place_town", type = "symbol",
+         layout = list(`text-font` = stk("Montserrat Medium", "Open Sans Regular",
+                                         "Noto Sans Regular"))),
+    list(id = "place_city", type = "symbol",
+         layout = list(`text-font` = stk("Montserrat SemiBold", "Open Sans Bold",
+                                         "Noto Sans Regular"))),
+    list(id = "place_country", type = "symbol",
+         layout = list(`text-font` = stk("Montserrat SemiBold", "Open Sans Bold",
+                                         "Noto Sans Regular"))),
+    list(id = "place_state", type = "symbol",
+         layout = list(`text-font` = stk("Montserrat SemiBold", "Open Sans Bold",
+                                         "Noto Sans Regular"))),
+    # an expression is not a stack
+    list(id = "poi", type = "symbol",
+         layout = list(`text-font` = list("literal", list("X Regular"))))
+  )
+}
+text_fonts <- function(m) {
+  lapply(Filter(function(l) l$id %in% c("pic-text", "pic-title"), m$x$layers),
+         function(l) l$layout[["text-font"]])
+}
+body_stack <- list("Montserrat Medium", "Open Sans Regular", "Noto Sans Regular")
+
+test_that("add_rpic font = \"style\" uses the style's upright body font", {
+  skip_if_not_installed("mapgl")
+  src <- read_pic("radius")
+  m <- add_rpic(mapgl::maplibre(style = carto_like()), src)
+  expect_identical(text_fonts(m), list(body_stack, body_stack))
+  # geometry layers untouched; the rest of the label layout is the spec's
+  spec <- rpic_maplibre_layers(rpic_geojson(src))
+  lay <- m$x$layers[[5]]$layout
+  lay[["text-font"]] <- spec[[5]]$layout[["text-font"]]
+  expect_identical(lay, spec[[5]]$layout)
+  expect_identical(m$x$layers[[1]], add_rpic(mapgl::maplibre(style = carto_like()), src,
+                                             font = "spec")$x$layers[[1]])
+  # ties among the most common go to the first in style order; without an
+  # upright Regular/Medium stack, the most common of all
+  st <- style_list(
+    list(id = "a", type = "symbol", layout = list(`text-font` = list("A Bold"))),
+    list(id = "b", type = "symbol", layout = list(`text-font` = list("B Black"))),
+    list(id = "c", type = "symbol", layout = list(`text-font` = list("B Black"))))
+  expect_identical(text_fonts(add_rpic(mapgl::maplibre(style = st), src))[[1]], list("B Black"))
+  st2 <- style_list(
+    list(id = "a", type = "symbol", layout = list(`text-font` = list("A Regular"))),
+    list(id = "b", type = "symbol", layout = list(`text-font` = list("B Medium"))))
+  expect_identical(text_fonts(add_rpic(mapgl::maplibre(style = st2), src))[[1]], list("A Regular"))
+})
+
+test_that("add_rpic font: \"spec\", an explicit stack, styles without fonts", {
+  skip_if_not_installed("mapgl")
+  src <- read_pic("radius")
+  spec <- rpic_maplibre_layers(rpic_geojson(src))
+  noto <- spec[[5]]$layout[["text-font"]]
+  m <- add_rpic(mapgl::maplibre(style = carto_like()), src, font = "spec")
+  expect_identical(text_fonts(m), list(noto, noto))
+  m2 <- add_rpic(mapgl::maplibre(style = carto_like()), src,
+                 font = c("Open Sans Regular", "Arial Unicode MS Regular"))
+  expect_identical(text_fonts(m2)[[1]], list("Open Sans Regular", "Arial Unicode MS Regular"))
+  # a one-name stack stays a JSON array
+  m3 <- add_rpic(mapgl::maplibre(style = carto_like()), src, font = "Open Sans Regular")
+  skip_if_not_installed("jsonlite")
+  expect_match(as.character(jsonlite::toJSON(m3$x$layers[[5]]$layout["text-font"],
+                                             auto_unbox = TRUE)),
+               "\\[\"Open Sans Regular\"\\]", fixed = FALSE)
+  # no symbol layers / no stacks: the spec's font, silently
+  st <- style_list(list(id = "water", type = "fill"))
+  expect_no_warning(m4 <- add_rpic(mapgl::maplibre(style = st), src))
+  expect_identical(text_fonts(m4), list(noto, noto))
+  # an unreadable style: the spec's font, no warning of its own
+  expect_no_warning(m5 <- add_rpic(mapgl::mapboxgl(access_token = "pk.test"), src))
+  expect_identical(text_fonts(m5), list(noto, noto))
+  expect_error(add_rpic(mapgl::maplibre(style = st), src, font = NA_character_), "`font` must be")
+  expect_error(add_rpic(mapgl::maplibre(style = st), src, font = character()), "`font` must be")
+  expect_error(add_rpic(mapgl::maplibre(style = st), src, font = 1), "`font` must be")
+})
+
+test_that("add_rpic font = \"style\" reads a fetched style once, data-frame layers too", {
+  skip_if_not_installed("mapgl")
+  skip_if_not_installed("jsonlite")
+  clear_style_cache()
+  n <- 0
+  json <- jsonlite::toJSON(carto_like(), auto_unbox = TRUE)
+  local_mocked_bindings(.fetch_style = function(url, ...) {
+    n <<- n + 1
+    jsonlite::fromJSON(json)           # layers as a data frame
+  })
+  m <- add_rpic(mapgl::maplibre(style = "https://example.org/carto.json"), read_pic("radius"),
+                before = "labels")
+  expect_identical(n, 1)
+  expect_identical(lapply(text_fonts(m), unlist), list(unlist(body_stack), unlist(body_stack)))
+  expect_identical(before_ids(m), c(rep("place_suburbs", 4), NA, NA))
+  # an unreadable URL is tried once per call, for `before` and `font` alike
+  clear_style_cache()
+  n <- 0
+  local_mocked_bindings(.fetch_style = function(url, ...) {
+    n <<- n + 1
+    stop("offline")
+  })
+  expect_warning(add_rpic(mapgl::maplibre(style = "https://example.org/carto.json"),
+                          read_pic("radius"), before = "labels"), "offline")
+  expect_identical(n, 1)
 })
