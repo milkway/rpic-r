@@ -238,17 +238,33 @@ fn parse_options(
 // axis-aligned canvas extent of its four corners (so it covers the feature
 // under any bearing); a point feature a plain place. Numbers print in Rust's
 // shortest round-trip form (never exponent notation).
-fn prelude(first: &GeoOut, feats: &[&geopic_core::NamedFeature]) -> String {
+fn prelude(first: &GeoOut, feats: &[&geopic_core::NamedFeature]) -> Result<String, Failure> {
     let units = first.scale / first.rescale;
     let canvas = |lon: f64, lat: f64| {
         first
             .registration
             .to_canvas(geopic_core::LonLat { lon, lat })
     };
+    // a non-finite projection (a bbox reaching the pole under `mercator`, a
+    // feature far from an ENU anchor) must be a geo error, not `inf`/`NaN`
+    // tokens that fail the final pass as an opaque pic parse error
+    let finite = |name: &str, vals: &[f64]| {
+        if vals.iter().all(|v| v.is_finite()) {
+            Ok(())
+        } else {
+            Err(Failure::Geo(geopic_core::GeoError::new(
+                "invalid_feature",
+                format!(
+                    "feature `{name}` does not project to a finite canvas position in this frame"
+                ),
+            )))
+        }
+    };
     let mut out = String::new();
     for f in feats {
         let [x, y] = canvas(f.lon, f.lat);
         let (x, y) = (x * units, y * units);
+        finite(&f.name, &[x, y])?;
         match f.bbox {
             None => out.push_str(&format!("{}: ({x}, {y})\n", f.name)),
             Some([w, s, e, n]) => {
@@ -259,6 +275,7 @@ fn prelude(first: &GeoOut, feats: &[&geopic_core::NamedFeature]) -> String {
                     (xs.clone().fold(f64::MIN, f64::max) - xs.fold(f64::MAX, f64::min)) * units;
                 let ht =
                     (ys.clone().fold(f64::MIN, f64::max) - ys.fold(f64::MAX, f64::min)) * units;
+                finite(&f.name, &[wid, ht])?;
                 out.push_str(&format!(
                     "{}: box invis wid {wid} ht {ht} at ({x}, {y})\n",
                     f.name
@@ -266,11 +283,14 @@ fn prelude(first: &GeoOut, feats: &[&geopic_core::NamedFeature]) -> String {
             }
         }
     }
-    out
+    Ok(out)
 }
 
-// Labels the caller's source itself defines (places or labelled objects
-// after the `k` placeholder lines, or inside a `copy` include).
+// Labels the caller's source itself defines at top level (places or labelled
+// objects after the `k` placeholder lines, or inside a `copy` include). A
+// label inside a block (`X: [ B: box ]`) does not count: it is not what
+// `<B>_lon/_lat` or `arrow to B` reach, so a host feature named `B` is still
+// injected.
 fn defined_by_source(scene_json: &str, names: &[&str], k: u32) -> Result<Vec<String>, Failure> {
     let scene = geopic_core::parse_scene(scene_json)?;
     let own = |label: &str, span: Option<&geopic_core::Span>| {
@@ -278,12 +298,13 @@ fn defined_by_source(scene_json: &str, names: &[&str], k: u32) -> Result<Vec<Str
     };
     let mut out: Vec<String> = Vec::new();
     for p in &scene.places {
-        if own(&p.label, p.span.as_ref()) && !out.contains(&p.label) {
+        if p.block.is_none() && own(&p.label, p.span.as_ref()) && !out.contains(&p.label) {
             out.push(p.label.clone());
         }
     }
     for it in &scene.items {
         if let Some(l) = &it.label
+            && it.block.is_none()
             && own(l, it.span.as_ref())
             && !out.contains(l)
         {
@@ -352,7 +373,7 @@ pub fn run(
     if inject.is_empty() {
         return Ok(first);
     }
-    let pre = prelude(&first, &inject);
+    let pre = prelude(&first, &inject)?;
     let k2 = pre.lines().count() as u32;
     let p2 = compile_pass(&format!("{pre}{src}"), k2, copts)?;
     let mut out = georef_pass(

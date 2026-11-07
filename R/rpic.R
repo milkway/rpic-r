@@ -184,7 +184,7 @@ rpic_scene <- function(src, flatten = NULL, outline = FALSE,
 #' @export
 rpic_compile <- function(src, circuits = FALSE, texlabels = FALSE, scene = FALSE,
                          flatten = NULL, outline = FALSE) {
-  flat <- .rpic_flatten(flatten)
+  flat <- if (isTRUE(scene)) .rpic_flatten(flatten) else 0 # used only with the scene
   res <- rpic_compile_(src, circuits, texlabels, isTRUE(scene), flat, isTRUE(outline))
   b <- .rpic_value(res)
   if (is.null(b$places)) b$places <- list()
@@ -257,7 +257,9 @@ rpic_knitr_engine <- function(options) {
   # included as a figure (a character `out` would print its path as text)
   out <- list(knitr::include_graphics(path))
   if (!isFALSE(options$echo)) {
-    out <- c(list(structure(list(src = options$code), class = "source")), out)
+    # a numeric `echo` selects lines, as knitr's own engines do
+    code <- if (is.numeric(options$echo)) options$code[options$echo] else options$code
+    out <- c(list(structure(list(src = code), class = "source")), out)
   }
   knitr::engine_output(options, out = out)
 }
@@ -279,7 +281,10 @@ rpic_knitr_engine <- function(options) {
     if (!is.null(v)) args[[o]] <- v
   }
   fun <- if (.has_sf()) rpic_sf else rpic_geojson
-  value <- do.call(fun, args)
+  # call with symbols, not inlined values: the conditions' `call` would
+  # otherwise carry the whole deparsed `features` data frame
+  cl <- as.call(c(list(as.name("FUN")), stats::setNames(lapply(names(args), as.name), names(args))))
+  value <- eval(cl, list2env(c(args, list(FUN = fun)), parent = environment()))
   # the knitting environment (as knitr's own sql engine does for
   # `output.var`); the user named the variable with this chunk
   env <- knitr::knit_global()

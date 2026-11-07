@@ -130,3 +130,26 @@ test_that("no registration is an rpic_geo_error with kind and hint", {
                 rpic_geo_error = function(e) e)
   expect_identical(e$info$kind, "invalid_flatten")
 })
+
+test_that("a label inside a block does not claim a host feature of the same name", {
+  src <- "geo_lon = -34.87; geo_lat = -8.06; geo_scale = 1000
+X: [ B: box ]
+arrow from Recife to B"
+  gj <- rpic_geojson(src, features = list(Recife = c(-34.8711, -8.0631), B = c(-34.8553, -8.0089)))
+  reg <- attr(gj, "registration")
+  expect_equal(reg$method, "anchor")
+  expect_match(gj, "arrow")
+})
+
+test_that("a feature that does not project finitely is a geo error, not a parse error", {
+  src <- "geo_lon = 0; geo_lat = 0; geo_scale = 1000\nbox at Pole"
+  err <- tryCatch(
+    rpic_geojson(src, frame = "mercator",
+                 features = data.frame(name = "Pole", lon = 0, lat = 90)),
+    rpic_geo_error = function(e) e
+  )
+  expect_s3_class(err, "rpic_geo_error")
+  # the engine refuses the pole itself (invalid_anchor); the shim's own finite
+  # check (invalid_feature) is the backstop for anything that slips past
+  expect_true(err$info$kind %in% c("invalid_anchor", "invalid_feature"))
+})

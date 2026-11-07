@@ -166,14 +166,16 @@ rpic_sf <- function(src, ...) {
   }
   gj <- rpic_geojson(src, ...)
   x <- sf::st_read(as.character(gj), quiet = TRUE, stringsAsFactors = FALSE)
-  # sf's reader makes the names syntactic ("stroke-width" -> "stroke.width");
-  # put the simplestyle names back and spell geopic:<name> as geopic.<name>
-  nm <- sub("^geopic:", "geopic.", names(x))
+  # sf's reader makes the names syntactic ("stroke-width" -> "stroke.width",
+  # "geopic:kind" -> "geopic.kind"); put the simplestyle names back. Rebuild
+  # the sf object after renaming so its `agr` attribute follows the new names.
+  nm <- names(x)
   simplestyle <- c("stroke-width", "stroke-opacity", "fill-opacity",
                    "marker-size", "marker-symbol", "marker-color")
   hit <- match(nm, make.names(simplestyle))
   nm[!is.na(hit)] <- simplestyle[hit[!is.na(hit)]]
-  names(x) <- nm
+  geom_col <- attr(x, "sf_column")
+  x <- sf::st_as_sf(stats::setNames(as.data.frame(x), nm), sf_column_name = nm[match(geom_col, names(x))])
   if (attr(x, "sf_column") != "geometry") {
     sf::st_geometry(x) <- "geometry"
   }
@@ -240,7 +242,7 @@ rpic_sf <- function(src, ...) {
     )
   }
   if (inherits(features, "sf")) {
-    if (!requireNamespace("sf", quietly = TRUE)) {
+    if (!.has_sf()) {
       stop("sf features need the 'sf' package: install.packages(\"sf\")", call. = FALSE)
     }
     if (!name_col %in% names(features)) {
