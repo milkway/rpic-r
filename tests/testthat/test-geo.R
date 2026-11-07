@@ -132,12 +132,12 @@ test_that("no registration is an rpic_geo_error with kind and hint", {
 })
 
 test_that("a label inside a block does not claim a host feature of the same name", {
-  src <- "geo_lon = -34.87; geo_lat = -8.06; geo_scale = 1000
-X: [ B: box ]
-arrow from Recife to B"
+  src <- "X: [ B: box ]\narrow from Recife to B"
+  # both host features are injected (the block-inner B does not count), so
+  # the two of them register the drawing
   gj <- rpic_geojson(src, features = list(Recife = c(-34.8711, -8.0631), B = c(-34.8553, -8.0089)))
   reg <- attr(gj, "registration")
-  expect_equal(reg$method, "anchor")
+  expect_equal(reg$method, "two_points")
   expect_match(gj, "arrow")
 })
 
