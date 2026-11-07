@@ -116,6 +116,15 @@ object for the source, pipe-first verbs, snake_case columns, data frames.
 * The knitr engine includes the rendered PNG as a figure again; with
   current knitr it printed the figure's path as text output.
 
+## Engine 0.17.0
+
+Tracks the rpic engine 0.17.0 (vendored crates `rpic-core`/`rpic-render`/
+`geopic-core` 0.17.0). Nothing changes in what reaches R users: the
+release carries the engine's embedder additions (`CompileOptions.preludes`,
+`places[].block` in the `--json` bundle) and the JS MapLibre module's
+`before = "labels"`/`font = "style"` rules, which `add_rpic()` already
+implemented on the R side in the previous entry.
+
 ## Engine 0.16.0
 
 Tracks the rpic engine 0.16.0 (vendored crates `rpic-core`/`rpic-render`/
