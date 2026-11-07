@@ -224,20 +224,35 @@ vocabulary: `kind`, `message`, `hint`, `id`, span) instead of compiling.
   the object.
 * **Detection** follows the Studio (`rpic-app/apps/web/src/lib/detect.ts`):
   `circuits` = a call `name(` / `name (` of one of the 80 public macros of
-  the engine's `circuits.pic`, outside strings and comments, or a
+  the engine's `circuits.pic`, outside strings and comments — or a bare
+  use of such a name (the engine expands a macro without arguments), unless
+  the source assigns/labels that name (`wire = 3`, `ground:`) or uses it as
+  a field (`.ground`) — or a
   `copy "circuits"` line (`circuits = TRUE` alongside it is harmless — the
   library only defines macros, and the SVG is identical); `texlabels` = a
   string literal that is entirely `$...$` after trimming. The macro list is
   a constant in `R/source.R` — refresh it when the engine adds elements.
-  Detection is a guess, so it only sets defaults and is overridable both in
-  `pic()` and per call.
+  Comments are found in ONE left-to-right scan together with strings
+  (whichever starts first wins), so a `"` in a comment opens no string and
+  `"a # b"` is a string; `texlabels` looks only at strings outside
+  comments. Detection is a guess, so it only sets defaults and is
+  overridable both in `pic()` and per call. Explicit flags on every
+  `rpic_*()` go through the same validation as `pic()`'s (`.flag()`): `NA`,
+  `"TRUE"`, length ≠ 1 are errors, never silently `FALSE`.
 * **Printing.** `print()` never fails on a broken drawing (the summary is
   printed first; a compile error in the interactive preview is a message).
   The preview goes to `getOption("viewer")` (an HTML page in `tempdir()`,
   what RStudio/Positron accept) or `utils::browseURL()` of an SVG file.
-  `knit_print()` writes a PNG at the chunk's `fig_path()` like the `rpic`
-  engine does (not inline SVG: two inline SVGs on one page share ids such
-  as gradient definitions, and PNG works in every output format).
+  The preview file is one fixed path, `tempdir()/rpic-view/index.html`
+  (or `pic.svg`), overwritten by each print. `knit_print()` writes a PNG
+  under the chunk's `fig.path` (not inline SVG: two inline SVGs on one page
+  share ids such as gradient definitions, and PNG works in every output
+  format), named by content, `<label>-rpic-<md5 prefix>.png`: several
+  `pic()`s in one chunk, or one after a base plot, never share a file,
+  re-knitting reuses the names, and no counter state is kept (knitr's own
+  plot counter is internal; knitr counts our `include_graphics()` as a chunk
+  figure, so base plots move on to the next number). The `rpic` engine's
+  single figure keeps knitr's default name; both go through `.knit_png()`.
 * **S3 registration for Suggests generics** (`knitr::knit_print`,
   `ggplot2::autoplot`) uses roxygen's `@exportS3Method pkg::generic` — the
   delayed `S3method(pkg::gen, class)` NAMESPACE directive (R ≥ 3.6): the
@@ -245,9 +260,11 @@ vocabulary: `kind`, `message`, `hint`, `id`, span) instead of compiling.
   code and no hard dependency.
 * **snake_case columns.** `rpic_sf()` names columns by one rule,
   `rpic_sf_names()`: every `:` and `-` of the GeoJSON property becomes `_`.
-  sf's reader has already turned both into `.`, and no property of the
-  geopic vocabulary contains a dot, so `.` → `_` on its names is the same
-  map. The engine's GeoJSON text (and its MapLibre layers) keeps
+  It is applied to the REAL property names: the shim
+  `rpic_geojson_props_()` lists them from the engine's text, and each sf
+  column — `make.unique(make.names(<property>))`, sf's mangling — is renamed
+  to `rpic_sf_names(<property>)` (clashes after snake_casing made unique),
+  rather than guessing back from sf's dots. The engine's GeoJSON text (and its MapLibre layers) keeps
   `geopic:kind`/`stroke-width`: the R names are an R-side view.
 * **`add_rpic()`** is mapgl's verb shape (`add_*()`, map first, returns the
   map). `rpic_mapgl` is bound to the same function object (`identical()`),

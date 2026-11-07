@@ -8,13 +8,14 @@ object for the source, pipe-first verbs, snake_case columns, data frames.
 * `pic(src, circuits = NULL, texlabels = NULL)` wraps pic source in an
   `rpic_source` object (the source string with its `circuits` and
   `texlabels` options as attributes). Left `NULL`, the options are detected
-  from the source as the rpic Studio does: `circuits` when it calls a
-  circuit element (`resistor(`, `and_gate(`, ...) or says
+  from the source as the rpic Studio does: `circuits` when it uses a
+  circuit element (`resistor(A,B)`, a bare `ground`, ...) or says
   `copy "circuits"`, `texlabels` when a string label is entirely `$...$`.
   `print()` shows a summary and, interactively, opens the drawing in the
   viewer; `format()` returns the summary; in knitr a visible `pic()` is drawn
   as the chunk's figure (`knit_print()`, registered for knitr when it is
-  installed).
+  installed; figures are named by content, so several per chunk never
+  collide).
 * Every `rpic_*()` function takes a `pic()` or a string first, so drawings
   read as pipes: `pic(src) |> rpic_png("a.png")`,
   `pic(src) |> rpic_compile(scene = TRUE)`, `pic(src) |> rpic_sf()`. Given a
