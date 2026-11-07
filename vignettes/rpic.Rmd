@@ -18,7 +18,10 @@ doing the layout for you. The engine is pure Rust (no troff, no LaTeX, no
 system dependencies) and outputs SVG, PNG and PDF.
 
 All diagrams in this vignette were pre-rendered with `rpic_svg()` — the code
-chunks show exactly the source that produced each figure. The full language
+chunks show exactly the source that produced each figure. Wrap pic source in
+`pic()` and pipe it into the function that renders or reads it:
+`pic(src) |> rpic_svg()`, `pic(src) |> rpic_png("a.png")`,
+`pic(src) |> rpic_objects()`. (Every function also takes a plain string.) The full language
 reference, extension pages and a live playground are at
 [rpic.dev](https://rpic.dev).
 
@@ -30,7 +33,7 @@ default); `arrow` connects them; `arc` bends between named positions:
 ```{r}
 library(rpic)
 
-svg <- rpic_svg('
+flow <- pic('
 boxht = 0.35; boxwid = 0.8
 A: box "input"
 arrow
@@ -39,9 +42,25 @@ arrow
 E: ellipse "output"
 arc cw -> from A.n to E.n
 ')
+flow
+#> <pic source: 8 lines, 124 characters>
+#>   
+#>   boxht = 0.35; boxwid = 0.8
+#>   A: box "input"
+#>   arrow
+#>   box "process" fill 0.9
+#>   arrow
+#>   ... 2 more lines
+
+svg <- flow |> rpic_svg()
+flow |> rpic_png("flow.png", scale = 2)
 ```
 
 ![input, process and output connected by arrows, with an arc looping over the top](figures/flow.svg)
+
+Printed at the console, a `pic()` shows a summary of its source and — in an
+interactive session — opens the drawing in the viewer; left visible at the
+end of an R Markdown or Quarto chunk, it is drawn as the chunk's figure.
 
 ## Positioning
 
@@ -50,7 +69,7 @@ Objects can be labelled (`A:`), addressed by compass corners (`.n`, `.e`,
 expressions — including fractions of the way between two points:
 
 ```{r}
-rpic_svg('
+pic('
 A: box "A" wid 0.6 ht 0.4
 B: box "B" wid 0.6 ht 0.4 at A + (1.6, 0)
 line dashed from A.e to B.w
@@ -58,7 +77,8 @@ circle rad 0.06 fill 0 at 1/2 between A.e and B.w
 "midpoint" at last circle.s below
 arrow from A.n up 0.3 then right 1.6 then down 0.3 to B.n
 "the long way" at 1/2 between A.n and B.n + (0, 0.42)
-')
+') |>
+  rpic_svg()
 ```
 
 ![two boxes joined by a dashed line with a marked midpoint, and an arrow taking the long way over the top](figures/positioning.svg)
@@ -69,11 +89,12 @@ pic is a little language: `for`/`if`, variables, `define` macros with
 `$1…$9`, and `sprintf` are all built in:
 
 ```{r}
-rpic_svg('
+pic('
 for i = 0 to 5 do {
   circle rad 0.12 fill i/6 at (i * 0.4, 0)
 }
-')
+') |>
+  rpic_svg()
 ```
 
 ![six circles in a row, shading from black to light gray](figures/loop.svg)
@@ -82,14 +103,19 @@ for i = 0 to 5 do {
 
 With `texlabels = TRUE` (or `texlabels = 1` in the source), a label written
 entirely as `$…$` is typeset as TeX math, natively — KaTeX-grade quality
-with exact metrics, so boxes `fit` around formulas correctly. Write TeX
-commands with a single backslash in the pic source (escaped as `\\` inside
-an R string):
+with exact metrics, so boxes `fit` around formulas correctly. `pic()` turns
+`texlabels` on by itself when some label is entirely `$…$` (and `circuits`
+when the source calls a circuit element); pass `texlabels = FALSE` to keep
+the dollars literal. Write TeX commands with a single backslash in the pic
+source (escaped as `\\` inside an R string):
 
 ```{r}
-rpic_svg('
+math <- pic('
 box "$\\frac{1}{2\\pi}\\int_{-\\infty}^{\\infty} f(t)\\,e^{-i\\omega t}\\,dt$" fit
-', texlabels = TRUE)
+')
+attr(math, "texlabels")
+#> [1] TRUE
+math |> rpic_svg()
 ```
 
 ![a box fitted around the Fourier-transform integral, typeset as math](figures/math.svg)
@@ -103,16 +129,43 @@ patterns, curly `brace` annotations, `margin`, `fit`, `opacity`, layers
 classic input:
 
 ```{r}
-rpic_svg('
+pic('
 B: box wid 0.9 ht 0.55 gradient "steelblue" "white"
 "gradient" at B.c
 C: circle rad 0.3 hatch hatchangle 45 at B.e + (1.0, 0)
 "hatch" at C.s below
 brace from B.nw + (0, 0.15) to C.ne + (0, 0.15) up "extensions"
-')
+') |>
+  rpic_svg()
 ```
 
 ![a gradient-filled box and a hatched circle spanned by a curly brace labelled extensions](figures/extensions.svg)
+
+## Drawing data
+
+`rpic_objects()`, `rpic_places()` and `rpic_warnings()` read the compile
+bundle as data frames, one row per object, named place or warning — with the
+source position of each, so a tool can point back at the line that drew it:
+
+```{r}
+flow |> rpic_objects()
+#>   id    kind line col end_col file  bbox_x0  bbox_y0  bbox_x1  bbox_y1 link
+#> 1 s0     box    3   4       7 <NA>   1.0667 127.7333  77.8667 161.3333 <NA>
+#> 2 s1    path    4   1       6 <NA>  77.8667 142.1333 125.8667 146.9333 <NA>
+#> 3 s2     box    5   1       4 <NA> 125.8667 127.7333 202.6667 161.3333 <NA>
+#> 4 s3    path    6   1       6 <NA> 202.6667 142.1333 250.6667 146.9333 <NA>
+#> 5 s4 ellipse    7   4      11 <NA> 250.6667 120.5333 322.6667 168.5333 <NA>
+#> 6 s5     arc    8   1       4 <NA>  39.4667   0.5333 288.4015 127.7333 <NA>
+
+w <- pic('A: (0, 0)\nbox foo') |> rpic_warnings()
+w[, c("kind", "line", "col", "found", "hint")]
+#>                kind line col found                hint
+#> 1 ignored_attribute    2   5   foo did you mean `fit`?
+```
+
+Bounding boxes are in SVG viewBox units (`bbox_x0`, `bbox_y0` the top-left
+corner); `rpic_compile()` returns the whole bundle as a list when you need
+more (animations, the scene).
 
 ## Errors you can point at
 
@@ -122,7 +175,7 @@ source), kind, and a did-you-mean hint:
 
 ```{r}
 tryCatch(
-  rpic_svg("bxo", circuits = TRUE),
+  pic("bxo") |> rpic_svg(),
   rpic_error = function(e) list(line = e$info$line, hint = e$info$hint)
 )
 #> $line

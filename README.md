@@ -43,18 +43,29 @@ network needed at build time) are attached to each
 ```r
 library(rpic)
 
-rpic_svg('box "input"; arrow; box "process" fill 0.9; arrow; ellipse "output"')
+flow <- pic('box "input"; arrow; box "process" fill 0.9; arrow; ellipse "output"')
+flow |> rpic_svg()
+flow |> rpic_png("flow.png", scale = 2)
 
-# circuit library — two-terminal elements take two named points:
-rpic_png('A:(0,0); B:(2,0)
-resistor(A,B)', "circuit.png", scale = 2, circuits = TRUE)
+# circuit library — two-terminal elements take two named points; pic()
+# notices the element call and loads the library (circuits = TRUE):
+pic('A:(0,0); B:(2,0)
+resistor(A,B)') |>
+  rpic_pdf("circuit.pdf")
 
-# TeX math labels, typeset natively:
-rpic_svg('box "$-\\frac{T}{2}$" fit', texlabels = TRUE)
+# TeX math labels, typeset natively (texlabels detected from the `$…$`):
+pic('box "$-\\frac{T}{2}$" fit') |> rpic_svg()
 
-# the full bundle: svg + animation manifest + diagnostics + warnings
-jsonlite::fromJSON(rpic_manifest('box; animate last box with "pop"'))
+# drawing data as data frames: objects, named places, warnings
+flow |> rpic_objects()
+
+# maps: georeference the drawing as an sf data frame, or put it on mapgl
+pic('geo_lon = -34.8711; geo_lat = -8.0631; geo_scale = 1000
+circle rad 2 at (0, 0) fill 0.95') |>
+  rpic_sf()
 ```
+
+Every function also takes a plain string of pic source.
 
 ### Errors you can point at
 

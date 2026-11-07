@@ -8,8 +8,9 @@ library(rpic)
 fig_dir <- "vignettes/figures"
 dir.create(fig_dir, recursive = TRUE, showWarnings = FALSE)
 
+# pic() detects circuits/texlabels; the explicit flags below win
 gen <- function(name, src, ...) {
-  svg <- rpic_svg(src, ...)
+  svg <- pic(src, ...) |> rpic_svg()
   writeLines(svg, file.path(fig_dir, paste0(name, ".svg")))
   cat("wrote", name, "\n")
 }
@@ -117,7 +118,7 @@ animate 2nd box with "fade"
 animate 3rd box with "draw" for 0.8
 ')
 
-manifest <- rpic_manifest('
+manifest <- pic('
 boxht = 0.35; boxwid = 0.8
 A: box "build"
 arrow
@@ -127,7 +128,8 @@ box "ship"
 animate A with "pop"
 animate 2nd box with "fade"
 animate 3rd box with "draw" for 0.8
-')
+') |>
+  rpic_manifest()
 writeLines(manifest, file.path(fig_dir, "animate.json"))
 cat("wrote animate.json\n")
 
@@ -145,11 +147,11 @@ if (requireNamespace("sf", quietly = TRUE) && requireNamespace("ggplot2", quietl
   # drawing as drawn; text features are labels, not markers
   pic_layers <- function(x) {
     # text and shape titles (engine 0.15.1: a point at the text's centre)
-    shapes <- x[!x$geopic.kind %in% c("text", "title"), ]
-    labels <- x[x$geopic.kind %in% c("text", "title"), ]
+    shapes <- x[!x$geopic_kind %in% c("text", "title"), ]
+    labels <- x[x$geopic_kind %in% c("text", "title"), ]
     list(
       geom_sf(data = shapes, aes(fill = fill, colour = stroke), linewidth = 0.4),
-      geom_sf_text(data = labels, aes(label = geopic.text), size = 3),
+      geom_sf_text(data = labels, aes(label = geopic_text), size = 3),
       scale_fill_identity(), scale_colour_identity(),
       coord_sf(clip = "off"),
       labs(x = NULL, y = NULL), theme_void(base_size = 9),
@@ -165,19 +167,20 @@ if (requireNamespace("sf", quietly = TRUE) && requireNamespace("ggplot2", quietl
   }
 
   for (name in c("callout", "radius", "two-control-points", "arrow-between-features")) {
-    x <- rpic_sf(geo_src(name))
+    x <- pic(geo_src(name)) |> rpic_sf()
     save_map(paste0("geo-", name), ggplot() + pic_layers(x))
   }
 
   nc <- sf::st_read(system.file("shape/nc.shp", package = "sf"), quiet = TRUE)
   two <- nc[nc$NAME %in% c("Mecklenburg", "Wake"), ]
-  route <- rpic_sf('
+  route <- pic('
 geo_scale = 50000        # one inch is 50 km
 arrowht = 0.3; arrowwid = 0.18
 arrow from Mecklenburg to Wake thick 1.5 color "firebrick"
 "Wake" above at Wake.n
 "Mecklenburg" below at Mecklenburg.s
-', features = two, name_col = "NAME")
+') |>
+    rpic_sf(features = two, name_col = "NAME")
   save_map("geo-nc", ggplot() +
     geom_sf(data = nc, fill = "grey95", colour = "grey70", linewidth = 0.2) +
     geom_sf(data = two, fill = "#cfe3d6", colour = "#2f5d43", linewidth = 0.3) +
