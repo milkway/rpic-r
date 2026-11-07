@@ -143,7 +143,10 @@ rpic_geojson <- function(src, frame = c("enu", "mercator"), anchor = NULL, scale
 #'
 #' The `"warnings"` and `"registration"` attributes of [rpic_geojson()] are
 #' carried over (as attributes of the data frame; `sf` operations may drop
-#' them), and warnings are raised the same way.
+#' them), and warnings are raised the same way. The `"geojson"` attribute
+#' keeps the engine's own GeoJSON text (the [rpic_geojson()] result the data
+#' frame was read from), which [rpic_maplibre_layers()] and [rpic_mapgl()]
+#' use instead of re-serialising the data frame.
 #' @param src pic source code.
 #' @param ... arguments passed to [rpic_geojson()] (`frame`, `anchor`,
 #'   `scale`, `bearing`, `features`, `flatten`, `view_scale`, `circuits`,
@@ -182,6 +185,9 @@ rpic_sf <- function(src, ...) {
   x <- sf::st_set_crs(x, 4326)
   attr(x, "warnings") <- attr(gj, "warnings")
   attr(x, "registration") <- attr(gj, "registration")
+  # the engine's own text, for rpic_maplibre_layers()/rpic_mapgl(); the row
+  # count lets them notice an sf that lost rows since
+  attr(x, "geojson") <- structure(gj, n_features = nrow(x))
   x
 }
 

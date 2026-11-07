@@ -34,7 +34,10 @@ for lines and arrows, points for dots and text).
 
 The \code{"warnings"} and \code{"registration"} attributes of \code{\link[=rpic_geojson]{rpic_geojson()}} are
 carried over (as attributes of the data frame; \code{sf} operations may drop
-them), and warnings are raised the same way.
+them), and warnings are raised the same way. The \code{"geojson"} attribute
+keeps the engine's own GeoJSON text (the \code{\link[=rpic_geojson]{rpic_geojson()}} result the data
+frame was read from), which \code{\link[=rpic_maplibre_layers]{rpic_maplibre_layers()}} and \code{\link[=rpic_mapgl]{rpic_mapgl()}}
+use instead of re-serialising the data frame.
 }
 \section{Requirements}{
 
