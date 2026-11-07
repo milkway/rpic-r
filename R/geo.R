@@ -18,7 +18,8 @@
 #' longitude/latitude (no step longer than 100 m), so a circle of radius
 #' 2 km is a geodesic circle, not a circle in degree space. Each drawn object
 #' becomes one or more features (boxes and circles polygons, lines line
-#' strings, dots and text points, arrowheads separate features) whose
+#' strings, dots and text points, arrowheads separate features, and a shape
+#' with text an extra `title` point at the text's centre) whose
 #' properties are the simplestyle keys (`stroke`, `stroke-width`, `fill`,
 #' `stroke-opacity`, `fill-opacity`, `title`) and the `geopic:` namespace
 #' (`geopic:id`, `geopic:kind`, `geopic:text`, `geopic:placement`, ...);
@@ -140,6 +141,13 @@ rpic_geojson <- function(src, frame = c("enu", "mercator"), anchor = NULL, scale
 #' one only some features carry is `NA` elsewhere. The geometry column is
 #' `geometry`, of mixed type (polygons for boxes and circles, line strings
 #' for lines and arrows, points for dots and text).
+#'
+#' A shape with text (`box "Marco Zero"`) is followed by a `title` row: a
+#' point at the centre of its text, `geopic.kind == "title"`, `geopic.id`
+#' `"<id>:title"` and `geopic.for` naming the shape's `geopic.id`, carrying
+#' the text in `title` and `geopic.text` (engine 0.15.1; MapLibre's
+#' `pic-title` layer draws these). Filter them out
+#' (`x[x$geopic.kind != "title", ]`) to keep one row per shape.
 #'
 #' The `"warnings"` and `"registration"` attributes of [rpic_geojson()] are
 #' carried over (as attributes of the data frame; `sf` operations may drop

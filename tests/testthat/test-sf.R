@@ -8,7 +8,15 @@ test_that("B4: rpic_sf is EPSG:4326 with the documented columns", {
                     "geopic.placement", "geopic.schema") %in% names(x)))
   expect_false(any(grepl(":", names(x))))
   expect_identical(attr(x, "sf_column"), "geometry")
-  expect_identical(x$geopic.kind, c("dot", "box", "arrow", "arrowhead"))
+  # engine 0.15.1: a shape with text gains a `title` point feature
+  expect_identical(x$geopic.kind, c("dot", "box", "title", "arrow", "arrowhead"))
+  t <- x[x$geopic.kind == "title", ]
+  expect_identical(t$geopic.for, "s1")
+  expect_identical(t$geopic.id, "s1:title")
+  expect_identical(t$title, "Marco Zero\nRecife")
+  expect_identical(as.character(sf::st_geometry_type(t)), "POINT")
+  # arrowheads no longer carry the shape's text
+  expect_true(is.na(x$title[x$geopic.kind == "arrowhead"]))
   expect_identical(attr(x, "registration")$method, "anchor")
 })
 

@@ -46,18 +46,26 @@
 * The knitr engine includes the rendered PNG as a figure again; with
   current knitr it printed the figure's path as text output.
 
-## Engine 0.15.0
+## Engine 0.15.1
 
-Tracks the rpic engine 0.15.0 (vendored crates `rpic-core`/`rpic-render`/
-`geopic-core` 0.15.0; 0.15.0 adds the MapLibre layers above). The existing
-R functions and their arguments are unchanged; rendering is byte-identical to 0.12.1 over the engine's whole corpus. What reaches R users
-through the pic source and the JSON outputs:
+Tracks the rpic engine 0.15.1 (vendored crates `rpic-core`/`rpic-render`/
+`geopic-core` 0.15.1; 0.15.0 added the MapLibre layers above). The existing
+R functions and their arguments are unchanged; rendering is
+byte-identical to 0.12.1 over the engine's whole corpus. What reaches R
+users through the pic source and the JSON outputs:
 
 * `rpic_scene()` gains a top-level `places` array — every `Label: position`
   statement as a named point in scene units, with its enclosing block and
   source span — and block items carry `span` (the outermost macro call that
   produced the block, or its `[`) and `call` (`name`, `args`). The scene
   format version stays 1 (additive).
+* A shape with text (`box "Marco Zero"`) gains a `title` point feature at
+  the centre of its text: in `rpic_sf()` a row with `geopic.kind ==
+  "title"`, `geopic.id` `"<id>:title"` and `geopic.for` naming the shape;
+  arrowheads no longer repeat the shape's `title`/`geopic.text`. The
+  `pic-title` MapLibre layer draws these points (a box's title was drawn
+  twice when the box straddled a map tile boundary). The scene's text
+  items gain `text_center` (additive).
 * troff requests (a line with `.` in column 1 other than `.PS`/`.PE`, e.g.
   `.ft B`) are set aside as classic pic and dpic do instead of failing to
   parse.

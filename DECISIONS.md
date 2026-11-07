@@ -128,9 +128,10 @@ decimals — measured on the radius example. So:
   mapping of paint/layout arguments.
 * `fit = TRUE` uses `mapgl::fit_bounds()` with the bbox of the collection's
   coordinates (computed in Rust, `rpic_geojson_bbox_()`), 48 px padding and
-  `maxZoom = 19`, the engine's JS `attach()` fit. Without the padding the
-  callout fitted edge to edge at a zoom where MapLibre placed the box title
-  twice (apparently once per tile the polygon crossed).
+  `maxZoom = 19`, the engine's JS `attach()` fit. (Without the padding the
+  callout fitted edge to edge and its box title showed twice: an engine
+  bug — the title was placed once per tile the polygon crossed — fixed in
+  engine 0.15.1 by title point features.)
 
 ## D8 — The mapgl page is a pkgdown article, evaluated (2026-11-07)
 

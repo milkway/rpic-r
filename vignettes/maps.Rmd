@@ -31,9 +31,9 @@ library(ggplot2)
 
 pic_layers <- function(x) {
   list(
-    geom_sf(data = x[x$geopic.kind != "text", ],
+    geom_sf(data = x[!x$geopic.kind %in% c("text", "title"), ],
             aes(fill = fill, colour = stroke), linewidth = 0.4),
-    geom_sf_text(data = x[!is.na(x$geopic.text), ],
+    geom_sf_text(data = x[x$geopic.kind %in% c("text", "title"), ],
                  aes(label = geopic.text), size = 3),
     scale_fill_identity(), scale_colour_identity(),
     coord_sf(clip = "off"), theme_void()

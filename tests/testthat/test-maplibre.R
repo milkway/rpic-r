@@ -63,6 +63,8 @@ test_that("one-element arrays stay lists; keys come in reading order", {
   expect_identical(lw[[3]], list("zoom"))
   expect_identical(layers[[1]]$filter, list("==", list("geometry-type"), "Polygon"))
   expect_identical(names(layers[[1]])[1:3], c("id", "type", "source"))
+  # engine 0.15.1: pic-title draws the `title` point features
+  expect_identical(layers[[6]]$filter, list("==", c("get", "geopic:kind"), "title"))
 })
 
 test_that("pic source and rpic_sf() input give the same layers", {
