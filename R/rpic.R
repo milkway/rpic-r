@@ -278,7 +278,7 @@ rpic_knitr_engine <- function(options) {
     v <- options[[paste0("geo.", o)]]
     if (!is.null(v)) args[[o]] <- v
   }
-  fun <- if (requireNamespace("sf", quietly = TRUE)) rpic_sf else rpic_geojson
+  fun <- if (.has_sf()) rpic_sf else rpic_geojson
   value <- do.call(fun, args)
   assign(var, value, envir = knitr::knit_global())
   knitr::engine_output(options, options$code, "")

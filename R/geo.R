@@ -161,7 +161,7 @@ rpic_geojson <- function(src, frame = c("enu", "mercator"), anchor = NULL, scale
 #' }
 #' @export
 rpic_sf <- function(src, ...) {
-  if (!requireNamespace("sf", quietly = TRUE)) {
+  if (!.has_sf()) {
     stop("rpic_sf() needs the 'sf' package: install.packages(\"sf\")", call. = FALSE)
   }
   gj <- rpic_geojson(src, ...)
@@ -182,6 +182,9 @@ rpic_sf <- function(src, ...) {
   attr(x, "registration") <- attr(gj, "registration")
   x
 }
+
+# Is sf available? (a function so tests can exercise the sf-less paths)
+.has_sf <- function() requireNamespace("sf", quietly = TRUE)
 
 # One R warning per distinct kind (with its count), class rpic_geo_warning.
 .geo_warn <- function(warnings, call) {

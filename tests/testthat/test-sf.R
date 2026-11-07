@@ -42,3 +42,24 @@ test_that("B4: sf features are placed at their centroids, with their extent", {
   expect_equal(unname(line[1, 1:2]), unname(cent[1, ]), tolerance = 1e-5)
   expect_error(rpic_sf("box", features = utm), "name_col")
 })
+
+test_that("without sf: rpic_sf says how to install it", {
+  local_mocked_bindings(.has_sf = function() FALSE)
+  expect_error(rpic_sf("geo_lon = 0; geo_lat = 0\nbox"), 'install.packages\\("sf"\\)')
+})
+
+test_that("knitr geo = TRUE assigns into knit_global (sf or GeoJSON)", {
+  skip_if_not_installed("knitr")
+  env <- knitr::knit_global()
+  on.exit(rm(list = intersect(c("my_map", "radius_1"), ls(env)), envir = env))
+  opts <- list(code = c("geo_lon = 0; geo_lat = 0", "box"), geo = TRUE,
+               geo.var = "my_map", engine = "rpic", echo = TRUE, results = "markup")
+  local_mocked_bindings(.has_sf = function() FALSE)
+  out <- rpic_knitr_engine(opts)
+  expect_s3_class(get("my_map", envir = env), "geojson")
+  opts$geo.var <- NULL
+  opts$label <- "radius-1"
+  opts$geo.scale <- 1000
+  rpic_knitr_engine(opts)
+  expect_equal(attr(get("radius_1", envir = env), "registration")$scale_m_per_in, 1000)
+})
