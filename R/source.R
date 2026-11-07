@@ -17,13 +17,21 @@
 #' With `circuits = NULL` or `texlabels = NULL` (the default), the option is
 #' detected from the source, the way the rpic Studio does — outside string
 #' literals and `#` comments:
-#' * `circuits` is `TRUE` when the source calls a macro of the native
-#'   circuit-element library (`resistor(`, `and_gate (`, ... — the public
-#'   macros of the engine's `circuits.pic`) or loads it itself with
-#'   `copy "circuits"` (loading it twice is harmless: the library only
-#'   defines macros). A macro of your own with a library name counts too.
-#' * `texlabels` is `TRUE` when some string literal is entirely one `$...$`
-#'   (after trimming spaces): `"$x^2$"` is math, `"costs $10"` is not.
+#' * `circuits` is `TRUE` when the source uses a macro of the native
+#'   circuit-element library (one of the public macros of the engine's
+#'   `circuits.pic`) — called (`resistor(A,B)`, `and_gate (P)`) or bare
+#'   (`ground`; the engine expands a macro name without arguments too) — or
+#'   loads it itself with `copy "circuits"` (loading it twice is harmless:
+#'   the library only defines macros). A bare name the source assigns or
+#'   labels anywhere (`wire = 3`, `ground: ...`) is the user's own variable
+#'   or place and does not count, nor does a field such as `.ground`. A
+#'   macro of your own with a library name counts.
+#' * `texlabels` is `TRUE` when some string literal (outside comments) is
+#'   entirely one `$...$` (after trimming spaces): `"$x^2$"` is math,
+#'   `"costs $10"` is not.
+#'
+#' A `#` starts a comment outside strings only (`"a # b"` is a string), and
+#' a `"` inside a comment opens no string.
 #'
 #' Pass `TRUE` or `FALSE` to override either guess.
 #'
@@ -115,19 +123,39 @@ pic <- function(src, circuits = NULL, texlabels = NULL) {
 
 .string_re <- '"(\\\\.|[^"\\\\])*"'
 
-# Source without its string literals (kept as "") and comments.
+# Source without its `#` comments. One left-to-right scan over strings and
+# comments: whichever starts first wins, so a `"` inside a comment opens no
+# string and a `#` inside a string ("a # b") starts no comment. Strings do
+# not span lines.
+.strip_comments <- function(text) {
+  gsub('("(?:\\\\.|[^"\\\\\n])*")|#[^\n]*', "\\1", text, perl = TRUE)
+}
+
+# Source without comments and with its string literals emptied ("").
 .strip_strings <- function(text) {
-  text <- gsub(.string_re, '""', text, perl = TRUE)
-  gsub("#[^\n]*", "", text, perl = TRUE)
+  gsub(.string_re, '""', .strip_comments(text), perl = TRUE)
 }
 
 .detect_circuits <- function(text) {
-  if (grepl('(^|[\n;])[ \t]*copy[ \t]+"circuits"', text, perl = TRUE)) return(TRUE)
-  call <- sprintf("\\b(%s)\\s*\\(", paste(.circuit_macros, collapse = "|"))
-  grepl(call, .strip_strings(text), perl = TRUE)
+  if (grepl('(^|[\n;])[ \t]*copy[ \t]+"circuits"', .strip_comments(text), perl = TRUE)) {
+    return(TRUE)
+  }
+  code <- .strip_strings(text)
+  names <- paste(.circuit_macros, collapse = "|")
+  # a call `name(` / `name (`
+  if (grepl(sprintf("(?<![.\\w])(%s)\\s*\\(", names), code, perl = TRUE)) return(TRUE)
+  # a bare use (the engine expands a macro name without arguments too), not
+  # an assignment `name =`, a label `name:` or a field `.name`; a name the
+  # source assigns or labels anywhere is the user's own, never the library's
+  bare <- regmatches(code, gregexpr(sprintf("(?<![.\\w])(%s)(?![\\w])(?!\\s*(=(?!=)|:))", names),
+                                    code, perl = TRUE))[[1]]
+  own <- regmatches(code, gregexpr(sprintf("(?<![.\\w])(%s)(?=\\s*(=(?!=)|:))", names),
+                                   code, perl = TRUE))[[1]]
+  length(setdiff(bare, own)) > 0
 }
 
 .detect_texlabels <- function(text) {
+  text <- .strip_comments(text)
   m <- regmatches(text, gregexpr(.string_re, text, perl = TRUE))[[1]]
   if (!length(m)) return(FALSE)
   inner <- trimws(substr(m, 2, nchar(m) - 1))

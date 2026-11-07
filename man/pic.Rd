@@ -59,14 +59,22 @@ With \code{circuits = NULL} or \code{texlabels = NULL} (the default), the option
 detected from the source, the way the rpic Studio does — outside string
 literals and \verb{#} comments:
 \itemize{
-\item \code{circuits} is \code{TRUE} when the source calls a macro of the native
-circuit-element library (\verb{resistor(}, \verb{and_gate (}, ... — the public
-macros of the engine's \code{circuits.pic}) or loads it itself with
-\verb{copy "circuits"} (loading it twice is harmless: the library only
-defines macros). A macro of your own with a library name counts too.
-\item \code{texlabels} is \code{TRUE} when some string literal is entirely one \verb{$...$}
-(after trimming spaces): \code{"$x^2$"} is math, \code{"costs $10"} is not.
+\item \code{circuits} is \code{TRUE} when the source uses a macro of the native
+circuit-element library (one of the public macros of the engine's
+\code{circuits.pic}) — called (\code{resistor(A,B)}, \code{and_gate (P)}) or bare
+(\code{ground}; the engine expands a macro name without arguments too) — or
+loads it itself with \verb{copy "circuits"} (loading it twice is harmless:
+the library only defines macros). A bare name the source assigns or
+labels anywhere (\code{wire = 3}, \code{ground: ...}) is the user's own variable
+or place and does not count, nor does a field such as \code{.ground}. A
+macro of your own with a library name counts.
+\item \code{texlabels} is \code{TRUE} when some string literal (outside comments) is
+entirely one \verb{$...$} (after trimming spaces): \code{"$x^2$"} is math,
+\code{"costs $10"} is not.
 }
+
+A \verb{#} starts a comment outside strings only (\code{"a # b"} is a string), and
+a \verb{"} inside a comment opens no string.
 
 Pass \code{TRUE} or \code{FALSE} to override either guess.
 }

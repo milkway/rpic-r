@@ -19,11 +19,27 @@ test_that("pic() builds an rpic_source and detects its options", {
   expect_false(attr(pic('box "resistor(A,B)"'), "circuits"))
   expect_false(attr(pic("box # resistor(A,B)"), "circuits"))
   expect_false(attr(pic("wire = 3\nbox wid wire"), "circuits"))
+  # bare macro names: the engine expands them without arguments
+  expect_true(attr(pic("A: (0,0)\nground"), "circuits"))
+  expect_true(attr(pic("move; vdd"), "circuits"))
+  expect_false(attr(pic("ground: (0, 0)\nbox at ground"), "circuits"))
+  expect_false(attr(pic("box; x = last box.ground"), "circuits"))
+  expect_false(attr(pic("myground = 1; ground_wire = 2"), "circuits"))
+  expect_false(attr(pic('box "ground"'), "circuits"))
+  # comments first: a quote inside a comment opens no string
+  expect_true(attr(pic('box # the "big" one\nresistor(A,B)'), "circuits"))
+  expect_true(attr(pic('box # it\'s "\nresistor(A,B)\n# "'), "circuits"))
+  expect_false(attr(pic('# copy "circuits"\nbox'), "circuits"))
+  expect_true(attr(pic('box "a # b"; resistor(A,B)'), "circuits"))
 
   expect_true(attr(pic('box "$x^2$"'), "texlabels"))
   expect_true(attr(pic('circle " $\\alpha$ " rad 0.3'), "texlabels"))
   expect_false(attr(pic('box "costs $10"'), "texlabels"))
   expect_false(attr(pic("define node { circle $1 }"), "texlabels"))
+  # a $...$ string inside a comment is not a label
+  expect_false(attr(pic('box # was "$x^2$"'), "texlabels"))
+  expect_true(attr(pic('box "$x$" # "costs $10"'), "texlabels"))
+  expect_true(attr(pic('box "# $y$"; circle "$z$"'), "texlabels"))
 
   # explicit options win; a vector is lines; an rpic_source is updated
   expect_false(attr(pic("resistor(A,B)", circuits = FALSE), "circuits"))
