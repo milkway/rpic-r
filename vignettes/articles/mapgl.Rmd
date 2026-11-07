@@ -1,11 +1,9 @@
 ---
 title: "Interactive maps with mapgl"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Interactive maps with mapgl}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
 ---
+
+<!-- A pkgdown article (vignettes/articles/, excluded from the package
+tarball): the live maps inline maplibre-gl, ~2.8 MB of HTML. -->
 
 ```{r setup, include = FALSE}
 has_mapgl <- requireNamespace("mapgl", quietly = TRUE)
@@ -13,7 +11,7 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = has_mapgl)
 ```
 
 `vignette("maps")` places pic drawings on the Earth and draws them with
-`ggplot2`. This one puts them on an interactive
+`ggplot2`. This article puts them on an interactive
 [MapLibre](https://maplibre.org/) map through
 [mapgl](https://walker-data.com/mapgl/), styled exactly as on
 [rpic.dev's Maps page](https://rpic.dev/docs/maps/): the engine emits the
@@ -24,9 +22,9 @@ of the city; a `thick` line stays as wide as the street it was drawn over.
 
 ```{r, eval = TRUE, echo = FALSE, results = "asis"}
 if (!has_mapgl) {
-  cat("> The maps in this vignette need the `mapgl` package",
+  cat("> The maps in this article need the `mapgl` package",
       "(`install.packages(\"mapgl\")`); it was not installed when this",
-      "vignette was built, so the code is shown without its output.\n")
+      "article was built, so the code is shown without its output.\n")
 }
 ```
 

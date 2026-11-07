@@ -132,10 +132,16 @@ decimals — measured on the radius example. So:
   callout fitted edge to edge at a zoom where MapLibre placed the box title
   twice (apparently once per tile the polygon crossed).
 
-## D8 — The mapgl vignette is evaluated (2026-11-07)
+## D8 — The mapgl page is a pkgdown article, evaluated (2026-11-07)
 
-Unlike D5, `vignette("mapgl")` runs its chunks (when mapgl is installed):
-the point is the interactive widget, which cannot be pre-rendered as a
-picture. Two widgets keep it light: the built HTML is ~2.8 MB (maplibre-gl
-and mapgl's other JS inlined), ~0.6 MB compressed in the tarball. Without
-mapgl the chunks are shown unevaluated with a note.
+Unlike D5, the mapgl page runs its chunks (when mapgl is installed): the
+point is the interactive widget, which cannot be pre-rendered as a
+picture. But a self-contained widget inlines maplibre-gl and mapgl's other
+JavaScript — the rendered HTML is ~2.8 MB — and as a package vignette it
+grew the CRAN tarball from ~14 MB to 16.8 MB. So it lives in
+`vignettes/articles/mapgl.Rmd`, a pkgdown article: built and published on
+the website (https://milkway.github.io/rpic-r/articles/mapgl.html),
+excluded from the tarball by `.Rbuildignore` (`^vignettes/articles$`).
+`vignette("maps")` keeps a short unevaluated `rpic_mapgl()` snippet and
+links to the article; the help pages link to it too. Without mapgl the
+article's chunks are shown unevaluated with a note.

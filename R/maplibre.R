@@ -42,7 +42,8 @@
 #' @section Errors:
 #' A JSON text that is not a FeatureCollection raises an `rpic_geo_error`
 #' with `e$info$kind == "invalid_geojson"`.
-#' @seealso [rpic_mapgl()]; `vignette("mapgl")`.
+#' @seealso [rpic_mapgl()]; the article
+#'   [Interactive maps with mapgl](https://milkway.github.io/rpic-r/articles/mapgl.html).
 #' @examples
 #' layers <- rpic_maplibre_layers('geo_lon = -34.8711; geo_lat = -8.0631
 #' geo_scale = 1000
@@ -80,7 +81,8 @@ rpic_maplibre_layers <- function(x, ...) {
 #' @return `map`, with the source and the layers added (pipe-friendly).
 #' @section Requirements:
 #' Needs the `mapgl` package: `install.packages("mapgl")`.
-#' @seealso `vignette("mapgl")`.
+#' @seealso [rpic_maplibre_layers()]; `vignette("maps")`; the article
+#'   [Interactive maps with mapgl](https://milkway.github.io/rpic-r/articles/mapgl.html).
 #' @examples
 #' if (requireNamespace("mapgl", quietly = TRUE)) {
 #'   src <- 'geo_lon = -34.8711; geo_lat = -8.0631; geo_scale = 1000

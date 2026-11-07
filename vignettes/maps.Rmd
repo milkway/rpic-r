@@ -274,5 +274,7 @@ maplibre(style = carto_style("positron")) |>
 ```
 
 It takes pic source, an `rpic_geojson()` result or an `rpic_sf()` data frame
-such as `radius` above, and fits the map to the drawing. The live maps and
-what the helper does step by step are in `vignette("mapgl")`.
+such as `radius` above, and fits the map to the drawing. Live maps, and what
+the helper does step by step, are in the article
+[Interactive maps with mapgl](https://milkway.github.io/rpic-r/articles/mapgl.html)
+on the package website.

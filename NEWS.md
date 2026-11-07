@@ -37,8 +37,9 @@
 * `rpic_mapgl()` adds a drawing to a `mapgl::maplibre()` or
   `mapgl::mapboxgl()` map: the engine's GeoJSON as source `"pic"`, the six
   layers and a fit to the drawing. `rpic_sf()` results keep the engine's
-  GeoJSON text in a `"geojson"` attribute for both. New vignette
-  `vignette("mapgl")`; `vignette("maps")` uses the helper.
+  GeoJSON text in a `"geojson"` attribute for both. `vignette("maps")`
+  uses the helper; live maps are in the website article "Interactive maps
+  with mapgl" (<https://milkway.github.io/rpic-r/articles/mapgl.html>), which is not shipped in the package.
 
 ## Bug fixes
 

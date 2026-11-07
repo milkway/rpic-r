@@ -64,5 +64,6 @@ vapply(layers, function(l) l$id, "")
 layers[[2]]$paint$`line-width`[1:3]   # "interpolate", exponential 2, zoom
 }
 \seealso{
-\code{\link[=rpic_mapgl]{rpic_mapgl()}}; \code{vignette("mapgl")}.
+\code{\link[=rpic_mapgl]{rpic_mapgl()}}; the article
+\href{https://milkway.github.io/rpic-r/articles/mapgl.html}{Interactive maps with mapgl}.
 }

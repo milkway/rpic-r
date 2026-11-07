@@ -59,5 +59,6 @@ if (requireNamespace("mapgl", quietly = TRUE)) {
 }
 }
 \seealso{
-\code{vignette("mapgl")}.
+\code{\link[=rpic_maplibre_layers]{rpic_maplibre_layers()}}; \code{vignette("maps")}; the article
+\href{https://milkway.github.io/rpic-r/articles/mapgl.html}{Interactive maps with mapgl}.
 }
