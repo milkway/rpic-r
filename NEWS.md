@@ -1,5 +1,50 @@
 # rpic (development version)
 
+## API
+
+The API moves towards tidyverse style before the next CRAN release: one
+object for the source, pipe-first verbs, snake_case columns, data frames.
+
+* `pic(src, circuits = NULL, texlabels = NULL)` wraps pic source in an
+  `rpic_source` object (the source string with its `circuits` and
+  `texlabels` options as attributes). Left `NULL`, the options are detected
+  from the source as the rpic Studio does: `circuits` when it calls a
+  circuit element (`resistor(`, `and_gate(`, ...) or says
+  `copy "circuits"`, `texlabels` when a string label is entirely `$...$`.
+  `print()` shows a summary and, interactively, opens the drawing in the
+  viewer; `format()` returns the summary; in knitr a visible `pic()` is drawn
+  as the chunk's figure (`knit_print()`, registered for knitr when it is
+  installed).
+* Every `rpic_*()` function takes a `pic()` or a string first, so drawings
+  read as pipes: `pic(src) |> rpic_png("a.png")`,
+  `pic(src) |> rpic_compile(scene = TRUE)`, `pic(src) |> rpic_sf()`. Given a
+  `pic()`, its `circuits`/`texlabels` are the defaults; `circuits` and
+  `texlabels` now default to `NULL` (= the `pic()`'s setting, `FALSE` for a
+  string — unchanged for existing code).
+* `rpic_objects()`, `rpic_places()` and `rpic_warnings()` return the compile
+  bundle's tables as plain data frames, one row per object, place or
+  warning: `id`, `kind`, source span, `bbox_x0`/`bbox_y0`/`bbox_x1`/
+  `bbox_y1` (`NA` without extent) and `link` for objects; `label`, `x`, `y`,
+  `block` and span for places; the diagnostic fields for warnings (also the
+  `"warnings"` attribute of an `rpic_geojson()`/`rpic_sf()` result). They
+  take a `pic()`, a string or an `rpic_compile()` result.
+* **Breaking (development version only — never on CRAN):** `rpic_sf()`
+  columns are snake_case: every `:` and `-` of a GeoJSON property name
+  becomes `_` — `geopic.kind` → `geopic_kind`, `geopic.font_size` →
+  `geopic_font_size`, `stroke-width` → `stroke_width`, `fill-opacity` →
+  `fill_opacity`, ... `rpic_sf_names()` is the documented mapping, with the
+  full vocabulary table. The GeoJSON text (and so the MapLibre layers) keeps
+  the engine's names.
+* `add_rpic(map, x, ..., before = NULL, text_scale = 1, fit = TRUE)` is the
+  mapgl adder, map first like mapgl's own `add_*()` verbs:
+  `maplibre() |> add_rpic(pic(src))`. `rpic_mapgl()` stays as an alias (the
+  same function).
+* `autoplot()` (`ggplot2`) of a georeferenced `pic()` draws it with
+  `geom_sf()`: fills and strokes as pic drew them, texts as labels.
+* Vignettes, the mapgl article, README and examples are written with `pic()`
+  and `|>`; the reference index is grouped as Compile and export · Drawing
+  data · Maps · knitr.
+
 ## New features
 
 * `rpic_geojson()` places a pic drawing on the Earth and returns it as a
@@ -11,10 +56,9 @@
   registration and the warnings ride as attributes. `features` injects
   named places from R — a named list, a data frame or an `sf` object
   (centroid + bounding box) — that the source can use by name.
-* `rpic_sf()` reads the same result into an `sf` data frame (EPSG:4326):
-  simplestyle columns keep their names (`stroke`, `stroke-width`, `fill`,
-  ...), `geopic:<name>` properties become `geopic.<name>`. `sf` is a
-  suggested package only.
+* `rpic_sf()` reads the same result into an `sf` data frame (EPSG:4326),
+  one snake_case column per property (`stroke`, `stroke_width`, `fill`,
+  `geopic_kind`, ...; see API above). `sf` is a suggested package only.
 * Losses are never silent: one `rpic_geo_warning` (an `rpic_warning`) per
   kind; registration failures raise `rpic_geo_error` (an `rpic_error`) with
   `e$info$kind` and `e$info$hint`.
@@ -34,18 +78,19 @@
   dashed strokes, dots, text, shape titles — with every size true to the
   ground, as R lists that serialise back to the engine's JSON. It takes an
   `rpic_geojson()` result, an `rpic_sf()` data frame or pic source.
-* `rpic_mapgl()` adds a drawing to a `mapgl::maplibre()` or
+* `add_rpic()` (named `rpic_mapgl()` earlier in this development cycle;
+  that name stays as an alias) adds a drawing to a `mapgl::maplibre()` or
   `mapgl::mapboxgl()` map: the engine's GeoJSON as source `"pic"`, the six
   layers and a fit to the drawing. `rpic_sf()` results keep the engine's
   GeoJSON text in a `"geojson"` attribute for both. `vignette("maps")`
   uses the helper; live maps are in the website article "Interactive maps
   with mapgl" (<https://milkway.github.io/rpic-r/articles/mapgl.html>), which is not shipped in the package.
-* `rpic_maplibre_layers()` and `rpic_mapgl()` gain `text_scale` (engine
+* `rpic_maplibre_layers()` and `add_rpic()` gain `text_scale` (engine
   0.16.0's layer option): it multiplies every label's font size, a number
   in (0, 16], default 1 (unchanged output). Strokes and dots keep their
   ground sizes. Out of range or not a number: an `rpic_geo_error` with
   `e$info$kind == "invalid_options"`.
-* `rpic_mapgl()` gains `before`: `"labels"` puts the drawing's shapes
+* `add_rpic()` gains `before`: `"labels"` puts the drawing's shapes
   (`pic-fill`, `pic-stroke`, `pic-stroke-dashed`, `pic-dot`) under the
   basemap's labels — before the style's layer `labels`, else its first
   `symbol` layer — while the drawing's own labels (`pic-text`,
@@ -94,9 +139,9 @@ users through the pic source and the JSON outputs:
   produced the block, or its `[`) and `call` (`name`, `args`). The scene
   format version stays 1 (additive).
 * A shape with text (`box "Marco Zero"`) gains a `title` point feature at
-  the centre of its text: in `rpic_sf()` a row with `geopic.kind ==
-  "title"`, `geopic.id` `"<id>:title"` and `geopic.for` naming the shape;
-  arrowheads no longer repeat the shape's `title`/`geopic.text`. The
+  the centre of its text: in `rpic_sf()` a row with `geopic_kind ==
+  "title"`, `geopic_id` `"<id>:title"` and `geopic_for` naming the shape;
+  arrowheads no longer repeat the shape's `title`/`geopic_text`. The
   `pic-title` MapLibre layer draws these points (a box's title was drawn
   twice when the box straddled a map tile boundary). The scene's text
   items gain `text_center` (additive).
