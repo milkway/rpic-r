@@ -26,7 +26,7 @@ or \code{NULL} to detect it (see Detection).}
 \item{texlabels}{typeset fully \verb{$...$}-delimited labels as TeX math:
 \code{TRUE}, \code{FALSE} or \code{NULL} to detect it (see Detection).}
 
-\item{x, object}{an \code{rpic_source}.}
+\item{x}{an \code{rpic_source}.}
 
 \item{n}{how many source lines \code{format()} and \code{print()} show.}
 

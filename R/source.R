@@ -45,7 +45,7 @@
 #'   or `NULL` to detect it (see Detection).
 #' @param texlabels typeset fully `$...$`-delimited labels as TeX math:
 #'   `TRUE`, `FALSE` or `NULL` to detect it (see Detection).
-#' @param x,object an `rpic_source`.
+#' @param x an `rpic_source`.
 #' @param n how many source lines `format()` and `print()` show.
 #' @param view render and open the drawing (see Printing).
 #' @param options knitr chunk options (supplied by knitr).
