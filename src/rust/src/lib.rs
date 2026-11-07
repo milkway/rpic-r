@@ -259,16 +259,21 @@ fn rpic_geojson_(src: &str, circuits: bool, texlabels: bool, options_json: &str)
 // `list(error =, info = list(kind, message, hint))`, a geo error.
 #[extendr]
 fn rpic_maplibre_layers_(fc_json: &str) -> List {
-    let parsed = geopic_core::maplibre::layers_json(fc_json).and_then(|text| {
-        serde_json::from_str::<serde_json::Value>(&text).map_err(|e| {
-            geopic_core::GeoError::new("internal", format!("layers JSON does not parse: {e}"))
+    let internal = |msg: String| geopic_core::GeoError::new("internal", msg);
+    let layers = geopic_core::maplibre::layers_json(fc_json)
+        .and_then(|text| {
+            serde_json::from_str::<serde_json::Value>(&text)
+                .map_err(|e| internal(format!("internal: layers JSON does not parse: {e}")))
         })
-    });
-    match parsed {
-        Ok(serde_json::Value::Array(layers)) => {
-            list!(value = List::from_values(layers.iter().map(layer_robj)))
-        }
-        Ok(v) => list!(value = value::to_robj_arrays(&v)),
+        .and_then(|v| match v {
+            serde_json::Value::Array(a) => a
+                .iter()
+                .map(|l| layer_robj(l).map_err(internal))
+                .collect::<Result<Vec<Robj>, _>>(),
+            _ => Err(internal("internal: the layers are not a JSON array".into())),
+        });
+    match layers {
+        Ok(ls) => list!(value = List::from_values(ls)),
         Err(e) => list!(
             error = e.to_string(),
             info = list!(
@@ -282,11 +287,12 @@ fn rpic_maplibre_layers_(fc_json: &str) -> List {
 
 // One layer spec with its keys in the style spec's reading order (`id`,
 // `type`, `source`, `filter`, `layout`, `paint`, then any other, sorted)
-// rather than serde_json's alphabetical order.
-fn layer_robj(v: &serde_json::Value) -> Robj {
-    let Some(m) = v.as_object() else {
-        return value::to_robj_arrays(v);
-    };
+// rather than serde_json's alphabetical order. A layer that is not an object
+// or cannot become a named list is an error, never an id-less layer.
+fn layer_robj(v: &serde_json::Value) -> Result<Robj, String> {
+    let m = v
+        .as_object()
+        .ok_or_else(|| "internal: a MapLibre layer is not a JSON object".to_string())?;
     const FIRST: [&str; 6] = ["id", "type", "source", "filter", "layout", "paint"];
     let keys: Vec<&str> = FIRST
         .iter()
@@ -295,10 +301,9 @@ fn layer_robj(v: &serde_json::Value) -> Robj {
         .chain(m.keys().map(String::as_str).filter(|k| !FIRST.contains(k)))
         .collect();
     let values: Vec<Robj> = keys.iter().map(|k| value::to_robj_arrays(&m[*k])).collect();
-    match List::from_names_and_values(keys, values) {
-        Ok(l) => l.into(),
-        Err(_) => r!(NULL),
-    }
+    List::from_names_and_values(keys, values)
+        .map(Into::into)
+        .map_err(|e| format!("internal: a MapLibre layer does not convert to an R list: {e:?}"))
 }
 
 // The bounding box `c(west, south, east, north)` of every position in a
