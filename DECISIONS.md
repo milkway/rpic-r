@@ -188,6 +188,20 @@ text_scale = 1, fit = TRUE)`.
   when the style *can* be read a missing id warns and appends, like the JS
   `console.warn`). An id among the map's own added layers needs no fetch.
 
+**Addendum (2026-11-07): `"labels"` is the trailing label block.** The
+first `symbol` layer was the wrong target. CARTO's positron (95 layers)
+has `waterway_label` at index 13, followed by 50+ tunnel, road, building
+and boundary layers, so the drawing's fills and strokes went under all of
+them (reported on the mapgl article; OpenFreeMap's positron, whose symbol
+layers all come last, hid it). The rule, shared with the engine's JS
+`attach()`: over the style's layers then the map's added ones, `pic-*`
+excluded, find the last layer whose type is not `symbol`; the target is
+the first layer (with an id) after it, and with none the layers go on top.
+A layer named `labels` still wins first; layers without an id still count
+as geometry or symbol for the block but are never the target. When the
+style cannot be read, the same rule over the added layers alone answers if
+they end in `symbol` layers, else the warning. Text layers stay on top.
+
 ## D10 — Drawing data are plain data frames (2026-11-07)
 
 `rpic_objects()`, `rpic_places()` and `rpic_warnings()` return a plain

@@ -63,17 +63,22 @@ label never covers them.
 \itemize{
 \item \code{NULL} (the default): all six layers on top of the style.
 \item \code{"labels"}: under the basemap's labels — before the style's layer with
-the id \code{labels} if it has one, else before its first \code{symbol} layer
-(place names, road labels), among the style's layers and those already
-added to \code{map}. The style is read from \code{map$x$style}: a list is
+the id \code{labels} if it has one, else at the start of its trailing label
+block: before the first layer that follows the last non-\code{symbol} layer
+(fill, line, ...), among the style's layers and those already added to
+\code{map} (the \verb{pic-*} layers aside). Not simply the first \code{symbol} layer:
+CARTO's positron puts \code{waterway_label} before its roads, buildings and
+boundaries, and the drawing would go under all of them. When a
+geometry layer is the last one, there is no label block and the layers
+go on top. The style is read from \code{map$x$style}: a list is
 inspected as is (\code{layers} as a list of layers or, from
 \code{jsonlite::fromJSON()}, a data frame); a URL
 (\code{mapgl::carto_style("positron")}, ...) is fetched once per session
 (needs \code{jsonlite}; 10 s timeout). When the style cannot be read —
 offline, a \verb{mapbox://} URL, \code{mapgl::mapboxgl()}'s default style, a list
 without \code{layers}, no \code{jsonlite} — and no layer added to \code{map} answers,
-a warning says so and the layers go on top. A style without \code{symbol}
-layers puts them on top too.
+a warning says so and the layers go on top (the added layers alone
+answer when they end in \code{symbol} layers).
 \item any other string: the id of a layer to insert before — of the style
 or one already added to \code{map}. When the style can be read and has no
 such layer, a warning says so and the layers go on top (MapLibre would

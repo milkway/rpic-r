@@ -244,7 +244,7 @@ test_that("add_rpic before = NULL appends all six layers", {
   expect_identical(before_ids(m), rep(NA_character_, 6))
 })
 
-test_that("add_rpic before = \"labels\": geometry under the first symbol layer, labels on top", {
+test_that("add_rpic before = \"labels\": geometry under the label block, labels on top", {
   skip_if_not_installed("mapgl")
   src <- read_pic("radius")
   st <- style_list(list(id = "bg", type = "background"), list(id = "water", type = "fill"),
@@ -253,7 +253,7 @@ test_that("add_rpic before = \"labels\": geometry under the first symbol layer, 
   m <- add_rpic(mapgl::maplibre(style = st), src, before = "labels")
   expect_identical(vapply(m$x$layers, function(l) l$id, ""), ids)
   expect_identical(before_ids(m), c(rep("road-names", 4), NA, NA))
-  # a layer literally named `labels` wins over the first symbol layer
+  # a layer literally named `labels` wins over the label block
   st2 <- style_list(list(id = "road-names", type = "symbol"), list(id = "labels", type = "fill"))
   m2 <- add_rpic(mapgl::maplibre(style = st2), src, before = "labels")
   expect_identical(before_ids(m2), c(rep("labels", 4), NA, NA))
@@ -265,6 +265,57 @@ test_that("add_rpic before = \"labels\": geometry under the first symbol layer, 
   m4 <- mapgl::add_layer(mapgl::maplibre(style = st3), "my-names", "symbol", source = "x")
   m4 <- add_rpic(m4, src, before = "labels")
   expect_identical(before_ids(m4)[-1], c(rep("my-names", 4), NA, NA))
+})
+
+test_that("add_rpic before = \"labels\": the start of the trailing label block, not the first symbol", {
+  skip_if_not_installed("mapgl")
+  src <- read_pic("radius")
+  # (a) CARTO positron's shape: an early symbol layer before roads and buildings
+  st <- style_list(list(id = "bg", type = "background"), list(id = "water", type = "fill"),
+                   list(id = "waterway_label", type = "symbol"),
+                   list(id = "road", type = "line"), list(id = "building", type = "fill"),
+                   list(id = "road_shield", type = "symbol"),
+                   list(id = "place_city", type = "symbol"))
+  m <- add_rpic(mapgl::maplibre(style = st), src, before = "labels")
+  expect_identical(before_ids(m), c(rep("road_shield", 4), NA, NA))
+  # (b) one trailing symbol layer after the last geometry
+  st_b <- style_list(list(id = "water", type = "fill"), list(id = "names", type = "symbol"),
+                     list(id = "building", type = "fill"),
+                     list(id = "place_city", type = "symbol"))
+  m_b <- add_rpic(mapgl::maplibre(style = st_b), src, before = "labels")
+  expect_identical(before_ids(m_b), c(rep("place_city", 4), NA, NA))
+  # (c) no trailing symbols: appended, silently
+  st_c <- style_list(list(id = "names", type = "symbol"), list(id = "building", type = "fill"))
+  expect_no_warning(m_c <- add_rpic(mapgl::maplibre(style = st_c), src, before = "labels"))
+  expect_identical(before_ids(m_c), rep(NA_character_, 6))
+  # (d) a layer literally named `labels` still wins
+  st_d <- style_list(list(id = "water", type = "fill"), list(id = "labels", type = "symbol"),
+                     list(id = "road", type = "line"), list(id = "place_city", type = "symbol"))
+  m_d <- add_rpic(mapgl::maplibre(style = st_d), src, before = "labels")
+  expect_identical(before_ids(m_d), c(rep("labels", 4), NA, NA))
+  # an added geometry layer after the style's labels closes the block: on top
+  m_g <- mapgl::add_layer(mapgl::maplibre(style = st_b), "mine", "fill", source = "x")
+  m_g <- add_rpic(m_g, src, before = "labels")
+  expect_identical(before_ids(m_g)[-1], rep(NA_character_, 6))
+  # an id-less geometry layer still counts as geometry
+  st_n <- style_list(list(id = "a", type = "symbol"), list(type = "fill"),
+                     list(id = "b", type = "symbol"))
+  m_n <- add_rpic(mapgl::maplibre(style = st_n), src, before = "labels")
+  expect_identical(before_ids(m_n), c(rep("b", 4), NA, NA))
+})
+
+test_that("add_rpic before = \"labels\" finds the trailing block of a fetched style", {
+  skip_if_not_installed("mapgl")
+  skip_if_not_installed("jsonlite")
+  clear_style_cache()
+  local_mocked_bindings(.fetch_style = function(url, ...) {
+    style_list(list(id = "water", type = "fill"), list(id = "waterway_label", type = "symbol"),
+               list(id = "road", type = "line"), list(id = "place_city", type = "symbol"),
+               list(id = "place_town", type = "symbol"))
+  })
+  m <- add_rpic(mapgl::maplibre(style = "https://example.org/trailing.json"),
+                read_pic("radius"), before = "labels")
+  expect_identical(before_ids(m), c(rep("place_city", 4), NA, NA))
 })
 
 test_that("add_rpic before = \"labels\" fetches a style URL once", {

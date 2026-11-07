@@ -94,17 +94,22 @@ rpic_maplibre_layers <- function(x, ..., text_scale = 1) {
 #'
 #' * `NULL` (the default): all six layers on top of the style.
 #' * `"labels"`: under the basemap's labels — before the style's layer with
-#'   the id `labels` if it has one, else before its first `symbol` layer
-#'   (place names, road labels), among the style's layers and those already
-#'   added to `map`. The style is read from `map$x$style`: a list is
+#'   the id `labels` if it has one, else at the start of its trailing label
+#'   block: before the first layer that follows the last non-`symbol` layer
+#'   (fill, line, ...), among the style's layers and those already added to
+#'   `map` (the `pic-*` layers aside). Not simply the first `symbol` layer:
+#'   CARTO's positron puts `waterway_label` before its roads, buildings and
+#'   boundaries, and the drawing would go under all of them. When a
+#'   geometry layer is the last one, there is no label block and the layers
+#'   go on top. The style is read from `map$x$style`: a list is
 #'   inspected as is (`layers` as a list of layers or, from
 #'   `jsonlite::fromJSON()`, a data frame); a URL
 #'   (`mapgl::carto_style("positron")`, ...) is fetched once per session
 #'   (needs `jsonlite`; 10 s timeout). When the style cannot be read —
 #'   offline, a `mapbox://` URL, `mapgl::mapboxgl()`'s default style, a list
 #'   without `layers`, no `jsonlite` — and no layer added to `map` answers,
-#'   a warning says so and the layers go on top. A style without `symbol`
-#'   layers puts them on top too.
+#'   a warning says so and the layers go on top (the added layers alone
+#'   answer when they end in `symbol` layers).
 #' * any other string: the id of a layer to insert before — of the style
 #'   or one already added to `map`. When the style can be read and has no
 #'   such layer, a warning says so and the layers go on top (MapLibre would
@@ -327,7 +332,8 @@ rpic_mapgl <- add_rpic
 
 # The layer id the geometry layers go before (NULL = on top), the rule of the
 # engine's JS `attach()`: "labels" = a layer whose id is `labels`, else the
-# first `symbol` layer with an id; any other string = that layer, checked
+# start of the trailing label block (`.label_block_start()`); any other
+# string = that layer, checked
 # when the style can be read. The candidates are the style's layers, then the
 # layers already added to the map (both precede ours at load); the added ones
 # are consulted even when the style cannot be read.
@@ -340,8 +346,10 @@ rpic_mapgl <- add_rpic
   style <- .style_layers(map$x$style)
   if (!is.null(style$error)) {
     if (before == "labels") {
-      first <- added$id[added$type %in% "symbol"]
-      if (length(first)) return(first[1])
+      # the added layers come after the (unknown) style: their trailing
+      # symbol block, if any, is the end of the map's label block
+      first <- .label_block_start(map$x$layers)
+      if (!is.null(first)) return(first)
       warning(sprintf(
         "add_rpic(): could not read the map's style to find its labels (%s); the pic layers go on top",
         style$error), call. = FALSE)
@@ -358,8 +366,7 @@ rpic_mapgl <- add_rpic
   all <- .layer_table(c(style$layers, map$x$layers))
   if (before == "labels") {
     if ("labels" %in% all$id) return("labels")
-    first <- all$id[all$type %in% "symbol"]
-    return(if (length(first)) first[1] else NULL)
+    return(.label_block_start(c(style$layers, map$x$layers)))
   }
   if (before %in% all$id) return(before)
   warning(sprintf(
@@ -368,16 +375,35 @@ rpic_mapgl <- add_rpic
   NULL
 }
 
+# The start of the trailing label block of `layers` (the style's, then the
+# map's added ones): the first layer with an id after the last layer whose
+# type is not `symbol`, the `pic-*` layers ignored; NULL when nothing follows
+# that last geometry layer. Not the first `symbol` layer: styles such as
+# CARTO's positron put `waterway_label` early, before 50+ road, building and
+# boundary layers, and the drawing would go under all of them.
+.label_block_start <- function(layers) {
+  t <- .layer_table(layers, keep_unnamed = TRUE)
+  own <- !is.na(t$id) & startsWith(t$id, "pic-")
+  id <- t$id[!own]
+  type <- t$type[!own]
+  geo <- which(!(type %in% "symbol"))
+  last_geo <- if (length(geo)) max(geo) else 0L
+  after <- id[seq_along(id) > last_geo]
+  after <- after[!is.na(after)]
+  if (length(after)) after[1] else NULL
+}
+
 # Layers as a table of `id` and `type`, without the layers that have no id
-# (never a `before_id`).
-.layer_table <- function(layers) {
+# (never a `before_id`) unless `keep_unnamed` (they still count as geometry
+# or symbol when finding the label block).
+.layer_table <- function(layers, keep_unnamed = FALSE) {
   str1 <- function(v) {
     v <- if (is.null(v) || !length(v)) NA_character_ else as.character(v[[1]])
     if (!length(v) || is.na(v) || !nzchar(v)) NA_character_ else v
   }
   id <- vapply(layers, function(l) if (is.list(l)) str1(l$id) else NA_character_, "")
   type <- vapply(layers, function(l) if (is.list(l)) str1(l$type) else NA_character_, "")
-  keep <- !is.na(id)
+  keep <- keep_unnamed | !is.na(id)
   list(id = unname(id[keep]), type = unname(type[keep]))
 }
 

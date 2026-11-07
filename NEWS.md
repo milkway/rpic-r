@@ -93,8 +93,10 @@ object for the source, pipe-first verbs, snake_case columns, data frames.
   `e$info$kind == "invalid_options"`.
 * `add_rpic()` gains `before`: `"labels"` puts the drawing's shapes
   (`pic-fill`, `pic-stroke`, `pic-stroke-dashed`, `pic-dot`) under the
-  basemap's labels — before the style's layer `labels`, else its first
-  `symbol` layer — while the drawing's own labels (`pic-text`,
+  basemap's labels — before the style's layer `labels`, else at the start
+  of its trailing label block (the first layer after the last non-`symbol`
+  layer; not the first `symbol` layer, which in CARTO's positron is
+  `waterway_label`, below roads and buildings) — while the drawing's own labels (`pic-text`,
   `pic-title`) stay on top, the rule of the engine's JavaScript
   `attach()`; a layer id inserts before that layer; `NULL` (the default)
   appends as before. A style given as a URL is fetched once to find the

@@ -66,9 +66,12 @@ function.)
 Two arguments tune how the drawing sits on the basemap:
 
 * `before = "labels"` puts the drawing's shapes — fills, strokes, dots —
-  *under* the basemap's labels: they are inserted before the style's first
-  `symbol` layer (its place and street names), so "Recife" and the street
-  names stay readable over the box's fill. The drawing's own labels
+  *under* the basemap's labels: they are inserted at the start of the
+  style's trailing label block — before the first layer after its last
+  fill or line layer, where the place and street names begin — so they sit
+  over the roads and buildings while "Recife" and the street names stay
+  readable over the box's fill. (Not before the first `symbol` layer:
+  positron draws `waterway_label` early, under its roads and buildings.) The drawing's own labels
   (`pic-text`, `pic-title`) still go on top, so a basemap label never
   covers "Marco Zero". The style is read to find that layer: here
   `carto_style("positron")` is a URL, fetched once per R session when the
@@ -135,7 +138,7 @@ attribute), not the data frame: `mapgl::add_source()` would re-serialise
 the `sf` with its R column names (`geopic_kind`), absent values as `null`
 and rounded coordinates. `add_rpic()` hands the text to the widget verbatim
 and adds the six layers in order (the four geometry layers before the
-style's first symbol layer when `before = "labels"`, the two text layers on
+style's trailing label block when `before = "labels"`, the two text layers on
 top). The layers depend only on the collection's registration (its metres
 per inch and latitude) and the font sizes it uses, so other mapgl layers —
 choropleths, popups, a basemap of your own — can sit under or over them.
