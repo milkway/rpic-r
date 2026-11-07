@@ -4,16 +4,20 @@
 \alias{rpic_pdf}
 \title{Render pic source to a PDF file}
 \usage{
-rpic_pdf(src, file, circuits = FALSE, texlabels = FALSE)
+rpic_pdf(src, file, circuits = NULL, texlabels = NULL)
 }
 \arguments{
-\item{src}{pic source code.}
+\item{src}{pic source code: a \code{\link[=pic]{pic()}} object or a single string.}
 
 \item{file}{output path.}
 
-\item{circuits}{load the native circuit-element library.}
+\item{circuits}{load the native circuit-element library (or write
+\verb{copy "circuits"} in the source itself). \code{NULL} (the default) takes the
+\code{\link[=pic]{pic()}} object's setting, \code{FALSE} for a string.}
 
-\item{texlabels}{typeset \verb{$...$} labels as TeX math.}
+\item{texlabels}{typeset fully \verb{$...$}-delimited labels as TeX math
+(initializer only — the source can still set \code{texlabels = 0}). \code{NULL}
+(the default) takes the \code{\link[=pic]{pic()}} object's setting, \code{FALSE} for a string.}
 }
 \value{
 the file path, invisibly.

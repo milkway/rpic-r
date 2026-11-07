@@ -6,21 +6,23 @@
 \usage{
 rpic_compile(
   src,
-  circuits = FALSE,
-  texlabels = FALSE,
+  circuits = NULL,
+  texlabels = NULL,
   scene = FALSE,
   flatten = NULL,
   outline = FALSE
 )
 }
 \arguments{
-\item{src}{pic source code.}
+\item{src}{pic source code: a \code{\link[=pic]{pic()}} object or a single string.}
 
 \item{circuits}{load the native circuit-element library (or write
-\verb{copy "circuits"} in the source itself).}
+\verb{copy "circuits"} in the source itself). \code{NULL} (the default) takes the
+\code{\link[=pic]{pic()}} object's setting, \code{FALSE} for a string.}
 
 \item{texlabels}{typeset fully \verb{$...$}-delimited labels as TeX math
-(initializer only — the source can still set \code{texlabels = 0}).}
+(initializer only — the source can still set \code{texlabels = 0}). \code{NULL}
+(the default) takes the \code{\link[=pic]{pic()}} object's setting, \code{FALSE} for a string.}
 
 \item{scene}{also compile the scene (\code{scene} element).}
 
@@ -73,6 +75,10 @@ box "hi" at A; arrow')
 names(b)
 b$objects[[1]]$kind   # "box"
 b$places[[1]]$label   # "A"
-s <- rpic_compile("circle", scene = TRUE)$scene
-s$items[[1]]$kind     # "circle"
+s <- pic("circle") |> rpic_compile(scene = TRUE)
+s$scene$items[[1]]$kind     # "circle"
+}
+\seealso{
+\code{\link[=rpic_objects]{rpic_objects()}}, \code{\link[=rpic_places]{rpic_places()}} and \code{\link[=rpic_warnings]{rpic_warnings()}} for
+\code{objects}, \code{places} and \code{warnings} as data frames.
 }

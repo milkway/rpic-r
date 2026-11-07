@@ -4,16 +4,18 @@
 \alias{rpic_manifest}
 \title{Compile to a JSON bundle (as a string)}
 \usage{
-rpic_manifest(src, circuits = FALSE, texlabels = FALSE)
+rpic_manifest(src, circuits = NULL, texlabels = NULL)
 }
 \arguments{
-\item{src}{pic source code.}
+\item{src}{pic source code: a \code{\link[=pic]{pic()}} object or a single string.}
 
 \item{circuits}{load the native circuit-element library (or write
-\verb{copy "circuits"} in the source itself).}
+\verb{copy "circuits"} in the source itself). \code{NULL} (the default) takes the
+\code{\link[=pic]{pic()}} object's setting, \code{FALSE} for a string.}
 
 \item{texlabels}{typeset fully \verb{$...$}-delimited labels as TeX math
-(initializer only — the source can still set \code{texlabels = 0}).}
+(initializer only — the source can still set \code{texlabels = 0}). \code{NULL}
+(the default) takes the \code{\link[=pic]{pic()}} object's setting, \code{FALSE} for a string.}
 }
 \value{
 a JSON string; parse with e.g. \code{jsonlite::fromJSON()}.

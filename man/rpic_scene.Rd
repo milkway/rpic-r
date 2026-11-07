@@ -8,12 +8,12 @@ rpic_scene(
   src,
   flatten = NULL,
   outline = FALSE,
-  circuits = FALSE,
-  texlabels = FALSE
+  circuits = NULL,
+  texlabels = NULL
 )
 }
 \arguments{
-\item{src}{pic source code.}
+\item{src}{pic source code: a \code{\link[=pic]{pic()}} object or a single string.}
 
 \item{flatten}{optional tolerance in inches: deliver every curve as a
 polyline within this distance of the exact cubics (\code{NULL} keeps the
@@ -23,10 +23,12 @@ Béziers).}
 fragments (\code{outline} keys) instead of metrics-only entries.}
 
 \item{circuits}{load the native circuit-element library (or write
-\verb{copy "circuits"} in the source itself).}
+\verb{copy "circuits"} in the source itself). \code{NULL} (the default) takes the
+\code{\link[=pic]{pic()}} object's setting, \code{FALSE} for a string.}
 
 \item{texlabels}{typeset fully \verb{$...$}-delimited labels as TeX math
-(initializer only — the source can still set \code{texlabels = 0}).}
+(initializer only — the source can still set \code{texlabels = 0}). \code{NULL}
+(the default) takes the \code{\link[=pic]{pic()}} object's setting, \code{FALSE} for a string.}
 }
 \value{
 a JSON string; parse with e.g. \code{jsonlite::fromJSON()}.
