@@ -270,11 +270,13 @@ width, dot and label **true to the ground**:
 library(mapgl)
 
 maplibre(style = carto_style("positron")) |>
-  rpic_mapgl(radius)
+  rpic_mapgl(radius, before = "labels", text_scale = 1.5)
 ```
 
 It takes pic source, an `rpic_geojson()` result or an `rpic_sf()` data frame
-such as `radius` above, and fits the map to the drawing. Live maps, and what
+such as `radius` above, and fits the map to the drawing; `before = "labels"`
+keeps the basemap's place names above the drawing's shapes (its own labels
+stay on top), and `text_scale = 1.5` enlarges the drawing's labels. Live maps, and what
 the helper does step by step, are in the article
 [Interactive maps with mapgl](https://milkway.github.io/rpic-r/articles/mapgl.html)
 on the package website.

@@ -49,7 +49,7 @@ arrow from B.sw to (0.06, 0.06) thick 1.2
 '
 
 maplibre(style = carto_style("positron"), height = 400) |>
-  rpic_mapgl(callout)
+  rpic_mapgl(callout, before = "labels", text_scale = 1.5)
 ```
 
 `rpic_mapgl(map, x)` takes a map from `maplibre()` or `mapboxgl()` and the
@@ -59,6 +59,26 @@ adds three things: a GeoJSON source `"pic"` with the drawing, the six layers
 of `rpic_maplibre_layers()` and, unless `fit = FALSE`, a `fit_bounds()` on
 the drawing. It returns the map, so mapgl's own functions (controls, other
 layers, legends) carry on in the same pipe.
+
+Two arguments tune how the drawing sits on the basemap:
+
+* `before = "labels"` puts the drawing's shapes — fills, strokes, dots —
+  *under* the basemap's labels: they are inserted before the style's first
+  `symbol` layer (its place and street names), so "Recife" and the street
+  names stay readable over the box's fill. The drawing's own labels
+  (`pic-text`, `pic-title`) still go on top, so a basemap label never
+  covers "Marco Zero". The style is read to find that layer: here
+  `carto_style("positron")` is a URL, fetched once when the map is built
+  (offline, a warning says so and everything goes on top). `before` also
+  takes a layer id (`before = "water"`), and `NULL`, the default, adds
+  every layer on top — the rule of the engine's JavaScript `attach()`.
+* `text_scale = 1.5` draws every label of the drawing half as large again.
+  By default text is true to the ground like everything else — an 11 pt
+  label covers the ground it would cover on the page at 400 metres per
+  inch — which makes it small at city zooms; the scale keeps it ground-true (it still
+  grows and shrinks with the map) but bigger. Strokes and dots keep their
+  ground sizes. `rpic_maplibre_layers(x, text_scale = 1.5)` gives the same
+  layers.
 
 ## What the helper does: `rpic_sf()` and `rpic_maplibre_layers()`
 
@@ -109,7 +129,9 @@ fit_bounds(m, x, padding = 48, maxZoom = 19)
 ```
 
 That is `rpic_mapgl(maplibre(style = carto_style("positron")), x)` spelled
-out; in practice the one call is enough. The layers depend only on the
+out (with `before`, the four geometry layers would get
+`add_layer(..., before_id = <the first symbol layer>)`); in practice the
+one call is enough. The layers depend only on the
 collection's registration (its metres per inch and latitude) and the font
 sizes it uses, so other mapgl layers — choropleths, popups, a basemap of
 your own — can sit under or over them.

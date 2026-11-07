@@ -146,3 +146,38 @@ excluded from the tarball by `.Rbuildignore` (`^vignettes/articles$`).
 `vignette("maps")` keeps a short unevaluated `rpic_mapgl()` snippet and
 links to the article; the help pages link to it too. Without mapgl the
 article's chunks are shown unevaluated with a note.
+
+## D9 — `text_scale` goes to the engine; `before` is resolved in R (2026-11-07)
+
+Engine 0.16.0 answered the request behind both arguments (its DECISIONS
+G11) and fixed the signature: `rpic_mapgl(map, x, ..., before = NULL,
+text_scale = 1, fit = TRUE)`.
+
+* **`text_scale` is a layer option, not R arithmetic.** It travels as JSON
+  text, `{"text_scale": k}`, to the shim `rpic_maplibre_layers_(fc_json,
+  opts_json)` → `geopic_core::maplibre::layers_json_with`. The scale lives
+  inside the engine's sizing (it moves the upper `text-size` zoom stop so
+  labels stay under MapLibre's 255 px), so scaling the R lists afterwards
+  would not give the CLI's `--text-scale` output; the test pins the R
+  layers at 1.5 to a fixture made by the v0.16.0 binary. The engine
+  validates the range ((0, 16], `invalid_options`); R checks only what it
+  must to write a JSON number — a single finite number — and raises the
+  same `rpic_geo_error`/`invalid_options` otherwise (`Inf` and `NaN`
+  have no JSON spelling).
+* **`before` is placement, a property of the map**, so it stays out of the
+  specs and is resolved by `rpic_mapgl()` with the JS `attach()` rule: only
+  the four geometry layers get mapgl's `add_layer(before_id =)`; `pic-text`
+  and `pic-title` are appended on top (the engine's first cut moved all
+  six and buried the drawing's own labels). `"labels"` = a layer whose id
+  is `labels`, else the first `symbol` layer, looked up among the style's
+  layers and then the layers already added to the map. The JS reads
+  `map.getStyle()` in the browser; R builds the widget before any browser
+  exists, so it reads `map$x$style` — a list as is, an http(s) URL fetched
+  once with `jsonlite` (10 s timeout, `.fetch_style()`, mocked in the
+  tests). The alternative — resolving in the widget's JavaScript — would
+  need a hook into mapgl's init that mapgl does not offer. When the style
+  cannot be read (offline, `mapbox://`, no jsonlite), `"labels"` warns and
+  appends; an explicit id is then trusted unchecked (MapLibre drops a
+  layer whose `beforeId` is missing, so when the style *can* be read a
+  missing id warns and appends, like the JS `console.warn`). An id among
+  the map's own added layers needs no fetch.

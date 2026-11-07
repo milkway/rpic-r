@@ -54,7 +54,8 @@ in viewBox units (\code{NA} when it has none) and source position;
 
 plus \code{interactions} and \code{scroll} when the source uses \code{draggable} or
 \verb{animate scroll}, and \code{scene} (the scene document of \code{\link[=rpic_scene]{rpic_scene()}} as a
-nested list) when \code{scene = TRUE}.
+nested list — text items with \code{text_center}/\code{text_rows}, blocks with
+\code{call$raw_args}) when \code{scene = TRUE}.
 
 JSON objects become named lists, arrays of numbers/strings/logicals
 atomic vectors, other arrays lists, \code{null} is \code{NA}; nested names are in

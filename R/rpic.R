@@ -96,6 +96,12 @@ rpic_manifest <- function(src, circuits = FALSE, texlabels = FALSE) {
 #' anchor points, every variable's final value under `vars`, and items in
 #' draw order carrying the same stable `s<N>` ids as the SVG. Use it to
 #' build your own backend (maps, TikZ, editors) on top of rpic's layout.
+#' Items with text carry `text_center` (the centre the lines are laid out
+#' around) and `text_rows` (the height of the author's label stack, blank
+#' rows included); each text line carries its `row` in that stack, so the
+#' visible lines of `box "" "below"` keep their place. Blocks made by a
+#' macro call carry `call` (`name`, normalized `args`, and `raw_args`: each
+#' argument as written, with its source position).
 #'
 #' Anything the SVG paints that the scene cannot represent is reported as an
 #' R `warning()` (engine kind `scene_unsupported`) — never silently dropped.
@@ -160,7 +166,8 @@ rpic_scene <- function(src, flatten = NULL, outline = FALSE,
 #'
 #' plus `interactions` and `scroll` when the source uses `draggable` or
 #' `animate scroll`, and `scene` (the scene document of [rpic_scene()] as a
-#' nested list) when `scene = TRUE`.
+#' nested list — text items with `text_center`/`text_rows`, blocks with
+#' `call$raw_args`) when `scene = TRUE`.
 #'
 #' JSON objects become named lists, arrays of numbers/strings/logicals
 #' atomic vectors, other arrays lists, `null` is `NA`; nested names are in
