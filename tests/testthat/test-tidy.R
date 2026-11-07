@@ -219,6 +219,18 @@ test_that("rpic_sf_names() is the column rule of rpic_sf()", {
   expect_setequal(setdiff(names(x), "geometry"), rpic_sf_names(props))
 })
 
+test_that("rpic_sf() column names come from the real property names", {
+  # sf mangles with make.names() (+ make.unique()); the columns are
+  # rpic_sf_names() of the real names, whatever the mangling
+  props <- c("geopic:kind", "stroke-width", "1st:x", "a-b", "a.b", "fill")
+  sf_names <- c(make.unique(make.names(props)), "geometry")
+  expect_identical(rpic:::.sf_columns(sf_names, props, "geometry"),
+                   c("geopic_kind", "stroke_width", "1st_x", "a_b", "a.b", "fill", "geometry"))
+  # snake_case clashes are made unique
+  expect_identical(rpic:::.sf_columns(c("a.b", "a.b.1", "geometry"), c("a-b", "a:b"), "geometry"),
+                   c("a_b", "a_b_1", "geometry"))
+})
+
 test_that("add_rpic() is the mapgl adder; rpic_mapgl() its alias", {
   expect_identical(rpic_mapgl, add_rpic)
   skip_if_not_installed("mapgl")

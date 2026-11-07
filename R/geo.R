@@ -184,12 +184,12 @@ rpic_sf <- function(src, ...) {
   gj <- rpic_geojson(src, ...)
   x <- sf::st_read(as.character(gj), quiet = TRUE, stringsAsFactors = FALSE)
   # sf's reader makes the names syntactic ("stroke-width" -> "stroke.width",
-  # "geopic:kind" -> "geopic.kind"); no property name of the vocabulary has
-  # a dot, so a dot was a `:` or `-`: snake_case it, as rpic_sf_names() does
-  # with the GeoJSON names. Rebuild the sf object after renaming so its `agr`
-  # attribute follows the new names.
-  nm <- gsub(".", "_", names(x), fixed = TRUE)
+  # "geopic:kind" -> "geopic.kind"). Name the columns from the REAL property
+  # names instead (read from the engine's text in Rust), through the
+  # documented rule rpic_sf_names(). Rebuild the sf object after renaming so
+  # its `agr` attribute follows the new names.
   geom_col <- attr(x, "sf_column")
+  nm <- .sf_columns(names(x), rpic_geojson_props_(as.character(gj)), geom_col)
   x <- sf::st_as_sf(stats::setNames(as.data.frame(x), nm), sf_column_name = nm[match(geom_col, names(x))])
   if (attr(x, "sf_column") != "geometry") {
     sf::st_geometry(x) <- "geometry"
@@ -231,6 +231,20 @@ rpic_sf <- function(src, ...) {
 rpic_sf_names <- function(x) {
   if (!is.character(x)) stop("`x` must be a character vector", call. = FALSE)
   gsub("[:-]", "_", x)
+}
+
+# Column names for an sf read from GeoJSON: each column sf made from a
+# property (`make.names()` of it, then `make.unique()` for clashes) gets
+# rpic_sf_names() of the property's real name; the geometry column and any
+# column no property explains keep sf's name. Clashes after snake_casing
+# (`a-b` and `a:b`) are made unique.
+.sf_columns <- function(sf_names, props, geom_col) {
+  mangled <- make.unique(make.names(props))
+  out <- sf_names
+  hit <- match(sf_names, mangled)
+  use <- !is.na(hit) & sf_names != geom_col
+  out[use] <- rpic_sf_names(props[hit[use]])
+  make.unique(out, sep = "_")
 }
 
 # Is sf available? (a function so tests can exercise the sf-less paths)
