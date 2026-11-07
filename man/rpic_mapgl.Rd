@@ -99,7 +99,7 @@ if (requireNamespace("mapgl", quietly = TRUE)) {
   ))
   m <- rpic_mapgl(mapgl::maplibre(style = style), src,
                   before = "labels", text_scale = 1.5)
-  vapply(m$x$layers, function(l) if (is.null(l$before_id)) NA else l$before_id, "")
+  vapply(m$x$layers, function(l) if (is.null(l$before_id)) NA_character_ else l$before_id, "")
 }
 }
 \seealso{

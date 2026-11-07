@@ -137,7 +137,7 @@ rpic_maplibre_layers <- function(x, ..., text_scale = 1) {
 #'   ))
 #'   m <- rpic_mapgl(mapgl::maplibre(style = style), src,
 #'                   before = "labels", text_scale = 1.5)
-#'   vapply(m$x$layers, function(l) if (is.null(l$before_id)) NA else l$before_id, "")
+#'   vapply(m$x$layers, function(l) if (is.null(l$before_id)) NA_character_ else l$before_id, "")
 #' }
 #' @export
 rpic_mapgl <- function(map, x, ..., before = NULL, text_scale = 1, fit = TRUE) {
