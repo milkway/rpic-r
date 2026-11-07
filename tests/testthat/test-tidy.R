@@ -84,8 +84,15 @@ test_that("print(view = TRUE) opens the drawing; errors become messages", {
   with_opts(list(viewer = function(url) seen <<- url), {
     expect_output(print(pic("box"), view = TRUE))
   })
-  expect_match(seen, "index\\.html$")
+  expect_identical(normalizePath(seen), normalizePath(file.path(tempdir(), "rpic-view", "index.html")))
   expect_match(paste(readLines(seen), collapse = "\n"), "<svg")
+  # one fixed file, overwritten
+  first <- seen
+  with_opts(list(viewer = function(url) seen <<- url), {
+    expect_output(print(pic("circle"), view = TRUE))
+  })
+  expect_identical(seen, first)
+  expect_match(paste(readLines(seen), collapse = "\n"), "<circle")
   with_opts(list(viewer = function(url) stop("not reached")), {
     expect_message(expect_output(print(pic("bxo"), view = TRUE)), "rpic: ")
   })

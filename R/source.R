@@ -187,8 +187,9 @@ print.rpic_source <- function(x, n = 6, view = interactive(), ...) {
     NULL
   })
   if (is.null(svg)) return(invisible(NULL))
-  dir <- tempfile("rpic-view-")
-  dir.create(dir)
+  # one fixed place, overwritten by each print
+  dir <- file.path(tempdir(), "rpic-view")
+  dir.create(dir, showWarnings = FALSE)
   viewer <- getOption("viewer")
   if (is.function(viewer)) {
     # IDE viewers want an HTML page under tempdir()
