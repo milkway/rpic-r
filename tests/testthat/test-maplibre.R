@@ -137,6 +137,19 @@ test_that("rpic_mapgl adds the pic source, the six layers and the bounds", {
   expect_identical(m3$x$layers, m$x$layers)
 })
 
+test_that("rpic_mapgl refuses a second drawing on the same map", {
+  skip_if_not_installed("mapgl")
+  src <- read_pic("radius")
+  m <- rpic_mapgl(mapgl::maplibre(), src)
+  expect_error(rpic_mapgl(m, src), "already has \"pic\".*one pic drawing")
+  # a foreign "pic" source, or a layer with one of the ids, clashes too
+  m2 <- mapgl::maplibre()
+  m2$x$sources <- list(list(id = "pic", type = "geojson", data = "x"))
+  expect_error(rpic_mapgl(m2, src), "one pic drawing")
+  m3 <- mapgl::add_layer(mapgl::maplibre(), "pic-dot", "circle", source = "other")
+  expect_error(rpic_mapgl(m3, src), "already has \"pic-dot\"")
+})
+
 test_that("rpic_mapgl refuses what is not a mapgl map", {
   skip_if_not_installed("mapgl")
   expect_error(rpic_mapgl(list(), "box"), "must be a map")

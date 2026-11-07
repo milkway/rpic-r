@@ -38,7 +38,8 @@ The source is the engine's GeoJSON text, handed to the widget verbatim.
 with the \code{sf} column names — \code{geopic.kind} instead of the \code{geopic:kind}
 the layers read — or a URL; so \code{rpic_mapgl()} registers the source in the
 widget itself, the way \code{add_source()} does.) A map holds one pic drawing:
-the source id and the layer ids are fixed by the engine.
+the source id and the layer ids are fixed by the engine, so a map that
+already has a source \code{"pic"} or one of the six layer ids is an error.
 }
 \section{Requirements}{
 

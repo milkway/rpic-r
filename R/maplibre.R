@@ -67,7 +67,8 @@ rpic_maplibre_layers <- function(x, ...) {
 #' with the `sf` column names — `geopic.kind` instead of the `geopic:kind`
 #' the layers read — or a URL; so `rpic_mapgl()` registers the source in the
 #' widget itself, the way `add_source()` does.) A map holds one pic drawing:
-#' the source id and the layer ids are fixed by the engine.
+#' the source id and the layer ids are fixed by the engine, so a map that
+#' already has a source `"pic"` or one of the six layer ids is an error.
 #'
 #' @param map a map from [mapgl::maplibre()] or [mapgl::mapboxgl()] (Shiny
 #'   proxies are not supported).
@@ -100,6 +101,19 @@ rpic_mapgl <- function(map, x, ..., fit = TRUE) {
   gj <- .geo_text(x, ..., call = sys.call())
   layers <- .maplibre_layers(gj, sys.call())
   source <- layers[[1]]$source
+  # a map holds one pic drawing: a second "pic" source or duplicate layer ids
+  # make mapgl's JavaScript throw at init (a blank map, no R error)
+  have_sources <- vapply(map$x$sources, function(s) as.character(s$id)[1], "")
+  have_layers <- vapply(map$x$layers, function(l) as.character(l$id)[1], "")
+  ids <- vapply(layers, function(l) l$id, "")
+  clash <- c(intersect(source, have_sources), intersect(ids, have_layers))
+  if (length(clash)) {
+    stop(sprintf(paste0(
+      "this map already has %s; a map holds one pic drawing ",
+      "(source \"%s\" and layers %s)"
+    ), paste0("\"", clash, "\"", collapse = ", "), source,
+    paste0("\"", ids, "\"", collapse = ", ")), call. = FALSE)
+  }
   # what mapgl::add_source() stores for an sf, with the engine's text as the
   # data: a "json"-classed string is written verbatim by htmlwidgets
   data <- structure(as.character(gj), class = "json")
