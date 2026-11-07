@@ -59,7 +59,8 @@ rpic_maplibre_layers <- function(x, ...) {
 #' map — [mapgl::maplibre()] or [mapgl::mapboxgl()]: a GeoJSON source `"pic"`
 #' holding the engine's FeatureCollection, the six layers of
 #' [rpic_maplibre_layers()] (added with [mapgl::add_layer()]) and, when
-#' `fit`, a [mapgl::fit_bounds()] on the drawing.
+#' `fit`, a [mapgl::fit_bounds()] on the drawing (48 px of padding, zoom 19
+#' at most — the fit of the engine's JavaScript `attach()`).
 #'
 #' The source is the engine's GeoJSON text, handed to the widget verbatim.
 #' (`mapgl::add_source()` takes only an `sf` object, which it re-serialises
@@ -107,14 +108,13 @@ rpic_mapgl <- function(map, x, ..., fit = TRUE) {
   )))
   for (l in layers) {
     map <- mapgl::add_layer(map, id = l$id, type = l$type, source = l$source,
-                            paint = if (is.null(l$paint)) list() else l$paint,
-                            layout = if (is.null(l$layout)) list() else l$layout,
-                            filter = l$filter)
+                            paint = l$paint, layout = l$layout, filter = l$filter)
   }
   if (isTRUE(fit)) {
     bbox <- rpic_geojson_bbox_(as.character(gj))
     if (!is.null(bbox)) {
-      map <- mapgl::fit_bounds(map, bbox)
+      # the engine's JS `attach()` fit: 48 px of padding, zoom 19 at most
+      map <- mapgl::fit_bounds(map, bbox, padding = 48, maxZoom = 19)
     }
   }
   map

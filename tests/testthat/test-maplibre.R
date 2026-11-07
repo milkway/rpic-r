@@ -112,6 +112,7 @@ test_that("rpic_mapgl adds the pic source, the six layers and the bounds", {
   expect_identical(m$x$layers[[5]]$layout, layers[[5]]$layout)
   expect_identical(m$x$layers[[1]]$filter, layers[[1]]$filter)
   bb <- m$x$fitBounds$bounds
+  expect_identical(m$x$fitBounds$options$padding, 48)
   expect_length(bb, 4)
   expect_true(bb[1] < bb[3] && bb[2] < bb[4])
   expect_true(bb[1] < -34.8711 && bb[3] > -34.8711)

@@ -1,0 +1,120 @@
+---
+title: "Interactive maps with mapgl"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Interactive maps with mapgl}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+has_mapgl <- requireNamespace("mapgl", quietly = TRUE)
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = has_mapgl)
+```
+
+`vignette("maps")` places pic drawings on the Earth and draws them with
+`ggplot2`. This one puts them on an interactive
+[MapLibre](https://maplibre.org/) map through
+[mapgl](https://walker-data.com/mapgl/), styled exactly as on
+[rpic.dev's Maps page](https://rpic.dev/docs/maps/): the engine emits the
+MapLibre layers that draw a drawing — fills, solid and dashed strokes, dots,
+text and shape titles — and every size in them is **true to the ground**.
+Zoom in and a label one inch wide keeps covering the same few hundred metres
+of the city; a `thick` line stays as wide as the street it was drawn over.
+
+```{r, eval = TRUE, echo = FALSE, results = "asis"}
+if (!has_mapgl) {
+  cat("> The maps in this vignette need the `mapgl` package",
+      "(`install.packages(\"mapgl\")`); it was not installed when this",
+      "vignette was built, so the code is shown without its output.\n")
+}
+```
+
+## One call: `rpic_mapgl()`
+
+The callout from `vignette("maps")`: a dot on Recife's Marco Zero, a box a
+few hundred metres north-east of it and an arrow between them, at 400
+metres per inch.
+
+```{r callout}
+library(rpic)
+library(mapgl)
+
+callout <- '
+geo_lon = -34.8711
+geo_lat = -8.0631
+geo_scale = 400          # metres per inch
+
+dot at (0, 0) rad 0.04
+B: box "Marco Zero" "Recife" wid 1.3 ht 0.5 at (1.4, 0.9) fill 0.95
+arrow from B.sw to (0.06, 0.06) thick 1.2
+'
+
+maplibre(style = carto_style("positron"), height = 400) |>
+  rpic_mapgl(callout)
+```
+
+`rpic_mapgl(map, x)` takes a map from `maplibre()` or `mapboxgl()` and the
+drawing — pic source (passed to `rpic_geojson()` with any further
+arguments), an `rpic_geojson()` result or an `rpic_sf()` data frame — and
+adds three things: a GeoJSON source `"pic"` with the drawing, the six layers
+of `rpic_maplibre_layers()` and, unless `fit = FALSE`, a `fit_bounds()` on
+the drawing. It returns the map, so mapgl's own functions (controls, other
+layers, legends) carry on in the same pipe.
+
+## What the helper does: `rpic_sf()` and `rpic_maplibre_layers()`
+
+The arrow between Recife and Olinda — two places the source uses but does
+not define, supplied as `features` — and a geodesic 2 km circle around
+Recife, now at one kilometre per inch:
+
+```{r layers}
+two_cities <- '
+geo_lon = -34.8711
+geo_lat = -8.0631
+geo_scale = 1000         # one inch is one kilometre
+
+C: circle rad 2 at (0, 0) dashed fill 0.97
+dot at C.c rad 0.04
+line from C.c to C.e thin
+"2 km" above at 0.5 <C.c, C.e>
+arrow from C.c to Olinda thick 1.5 color "firebrick"
+dot at Olinda rad 0.04
+"Olinda" above at Olinda + (0, 0.08)
+'
+x <- rpic_sf(two_cities, features = list(Olinda = c(-34.8553, -8.0089)))
+
+layers <- rpic_maplibre_layers(x)
+vapply(layers, function(l) l$id, "")
+layers[[2]]$paint$`line-width`[1:3]
+```
+
+Each layer is a MapLibre style-spec object as an R list — `id`, `type`,
+`source`, `filter`, `paint` and sometimes `layout` — whose expressions read
+the feature properties under their GeoJSON names (`stroke-width`,
+`geopic:kind`, ...). That is why the source must be the engine's GeoJSON and
+not the data frame: `mapgl::add_source()` would re-serialise the `sf` with
+its R column names (`geopic.kind`), absent values as `null` and coordinates
+rounded. `rpic_sf()` keeps the engine's text in its `"geojson"` attribute,
+and the map gets that, handed to the widget verbatim the way
+`mapgl::add_source()` stores a source:
+
+```{r manual}
+m <- maplibre(style = carto_style("positron"), height = 400)
+m$x$sources <- list(list(id = "pic", type = "geojson", generateId = TRUE,
+                         data = structure(as.character(attr(x, "geojson")), class = "json")))
+for (l in layers) {
+  m <- add_layer(m, id = l$id, type = l$type, source = l$source,
+                 paint = l$paint, layout = l$layout, filter = l$filter)
+}
+fit_bounds(m, x, padding = 48, maxZoom = 19)
+```
+
+That is `rpic_mapgl(maplibre(style = carto_style("positron")), x)` spelled
+out; in practice the one call is enough. The layers depend only on the
+collection's registration (its metres per inch and latitude) and the font
+sizes it uses, so other mapgl layers — choropleths, popups, a basemap of
+your own — can sit under or over them.
+
+The sizing formulas and the layer table are in the engine's
+[docs/geopic.md § 6](https://github.com/milkway/rpic-lang/blob/main/docs/geopic.md#6-rendering-on-maplibre).

@@ -28,18 +28,28 @@
   chunks, e.g. `ggplot2::geom_sf()`.
 * New vignette `vignette("maps")`: the engine's four geo examples with
   `ggplot2`, features from `sf`'s `nc` dataset, and `mapgl`.
+* `rpic_maplibre_layers()` returns the engine's MapLibre style-spec layers
+  for a georeferenced drawing (engine 0.15.0, `geopic-core`'s `maplibre`
+  module): the six layers rpic.dev's Maps page draws with — fills, solid and
+  dashed strokes, dots, text, shape titles — with every size true to the
+  ground, as R lists that serialise back to the engine's JSON. It takes an
+  `rpic_geojson()` result, an `rpic_sf()` data frame or pic source.
+* `rpic_mapgl()` adds a drawing to a `mapgl::maplibre()` or
+  `mapgl::mapboxgl()` map: the engine's GeoJSON as source `"pic"`, the six
+  layers and a fit to the drawing. `rpic_sf()` results keep the engine's
+  GeoJSON text in a `"geojson"` attribute for both. New vignette
+  `vignette("mapgl")`; `vignette("maps")` uses the helper.
 
 ## Bug fixes
 
 * The knitr engine includes the rendered PNG as a figure again; with
   current knitr it printed the figure's path as text output.
 
-## Engine 0.14.0
+## Engine 0.15.0
 
-Tracks the rpic engine 0.14.0 (vendored crates `rpic-core`/`rpic-render`/
-`geopic-core` 0.14.0). The existing R functions and their arguments are
-unchanged; rendering is
-byte-identical to 0.12.1 over the engine's whole corpus. What reaches R users
+Tracks the rpic engine 0.15.0 (vendored crates `rpic-core`/`rpic-render`/
+`geopic-core` 0.15.0; 0.15.0 adds the MapLibre layers above). The existing
+R functions and their arguments are unchanged; rendering is byte-identical to 0.12.1 over the engine's whole corpus. What reaches R users
 through the pic source and the JSON outputs:
 
 * `rpic_scene()` gains a top-level `places` array — every `Label: position`

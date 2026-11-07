@@ -29,7 +29,8 @@ Adds a georeferenced pic drawing to a \href{https://walker-data.com/mapgl/}{mapg
 map — \code{\link[mapgl:maplibre]{mapgl::maplibre()}} or \code{\link[mapgl:mapboxgl]{mapgl::mapboxgl()}}: a GeoJSON source \code{"pic"}
 holding the engine's FeatureCollection, the six layers of
 \code{\link[=rpic_maplibre_layers]{rpic_maplibre_layers()}} (added with \code{\link[mapgl:add_layer]{mapgl::add_layer()}}) and, when
-\code{fit}, a \code{\link[mapgl:fit_bounds]{mapgl::fit_bounds()}} on the drawing.
+\code{fit}, a \code{\link[mapgl:fit_bounds]{mapgl::fit_bounds()}} on the drawing (48 px of padding, zoom 19
+at most — the fit of the engine's JavaScript \code{attach()}).
 }
 \details{
 The source is the engine's GeoJSON text, handed to the widget verbatim.
