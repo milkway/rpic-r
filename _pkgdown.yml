@@ -23,11 +23,17 @@ reference:
   - title: Bundle and diagnostics
     desc: The full compile bundle — SVG, animation manifest, diagnostics and warnings.
     contents:
+      - rpic_compile
       - rpic_manifest
   - title: Scene export
     desc: The resolved draw list as device-independent JSON — build your own backend.
     contents:
       - rpic_scene
+  - title: Maps
+    desc: Place a pic drawing on the Earth — GeoJSON and sf.
+    contents:
+      - rpic_geojson
+      - rpic_sf
   - title: knitr / Quarto
     desc: Inline pic diagrams in R Markdown and Quarto chunks.
     contents:

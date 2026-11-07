@@ -19,9 +19,14 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 SystemRequirements: Cargo (Rust's package manager), rustc (>= 1.88.0)
 Suggests:
+    ggplot2,
     jsonlite,
     knitr,
-    rmarkdown
+    mapgl,
+    rmarkdown,
+    sf,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
 VignetteBuilder: knitr
 URL: https://milkway.github.io/rpic-r/, https://github.com/milkway/rpic-r, https://github.com/milkway/rpic-lang
 BugReports: https://github.com/milkway/rpic-r/issues
