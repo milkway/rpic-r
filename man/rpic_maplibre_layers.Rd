@@ -14,8 +14,8 @@ opens with a brace group needs a statement or comment before it), an
 \code{sf} data frame
 from \code{\link[=rpic_sf]{rpic_sf()}} (its \code{"geojson"} attribute, the engine's own text, is
 used — not its rows, so an \code{sf} that has lost rows since is an error and
-edited columns are not seen), or pic source code, which is
-georeferenced with \code{rpic_geojson(x, ...)}.}
+edited columns are not seen), or pic source — a \code{\link[=pic]{pic()}} object or a
+string — which is georeferenced with \code{rpic_geojson(x, ...)}.}
 
 \item{...}{arguments passed to \code{\link[=rpic_geojson]{rpic_geojson()}} when \code{x} is pic source.}
 
@@ -56,7 +56,7 @@ interpolation over \code{zoom}, base 2).
 The layers read the feature properties under their GeoJSON names
 (\code{stroke-width}, \code{geopic:kind}, ...), so the source they draw must be the
 engine's GeoJSON, not a re-serialised \code{sf} data frame (whose columns are
-\code{geopic.kind}, ...). \code{\link[=rpic_mapgl]{rpic_mapgl()}} takes care of that.
+\code{geopic_kind}, ...: \code{\link[=rpic_sf_names]{rpic_sf_names()}}). \code{\link[=add_rpic]{add_rpic()}} takes care of that.
 }
 \section{Errors}{
 
@@ -66,10 +66,11 @@ single number in (0, 16] one with \code{e$info$kind == "invalid_options"}.
 }
 
 \examples{
-layers <- rpic_maplibre_layers('geo_lon = -34.8711; geo_lat = -8.0631
+layers <- pic('geo_lon = -34.8711; geo_lat = -8.0631
 geo_scale = 1000
 circle rad 2 at (0, 0)
-"Recife" at (0, 0)')
+"Recife" at (0, 0)') |>
+  rpic_maplibre_layers()
 vapply(layers, function(l) l$id, "")
 layers[[2]]$paint$`line-width`[1:3]   # "interpolate", exponential 2, zoom
 
@@ -79,6 +80,6 @@ geo_scale = 1000
 "Recife" at (0, 0)', text_scale = 1.5)
 }
 \seealso{
-\code{\link[=rpic_mapgl]{rpic_mapgl()}}; the article
+\code{\link[=add_rpic]{add_rpic()}}; the article
 \href{https://milkway.github.io/rpic-r/articles/mapgl.html}{Interactive maps with mapgl}.
 }
