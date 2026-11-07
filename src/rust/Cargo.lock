@@ -364,6 +364,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "geographiclib-rs"
+version = "0.2.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c5a7f08910fd98737a6eda7568e7c5e645093e073328eeef49758cfe8b0489c7"
+dependencies = [
+ "libm",
+]
+
+[[package]]
+name = "geopic-core"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "321798e3cc6511d2d41e3276660e8672b7c41a30e159e12c11f0a06d8fa4b59d"
+dependencies = [
+ "geographiclib-rs",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "gif"
 version = "0.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -999,8 +1019,11 @@ name = "rpic"
 version = "0.13.0"
 dependencies = [
  "extendr-api",
+ "geopic-core",
  "rpic-core",
  "rpic-render",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
