@@ -119,14 +119,15 @@ rpic_maplibre_layers <- function(x, ..., text_scale = 1) {
 #' the source id and the layer ids are fixed by the engine, so a map that
 #' already has a source `"pic"` or one of the six layer ids is an error.
 #'
+#' `rpic_mapgl()` is the same function under its first name (an alias kept
+#' for code written against the development version).
+#'
 #' @param map a map from [mapgl::maplibre()] or [mapgl::mapboxgl()] (Shiny
 #'   proxies are not supported).
 #' @inheritParams rpic_maplibre_layers
 #' @param before where the geometry layers go: `NULL` (on top), `"labels"`
 #'   (under the basemap's labels) or a layer id; see Details.
 #' @param fit zoom the map to the drawing's bounding box.
-#' `rpic_mapgl()` is the same function under its first name (an alias kept
-#' for code written against the development version).
 #' @return `map`, with the source and the layers added (pipe-friendly).
 #' @section Requirements:
 #' Needs the `mapgl` package: `install.packages("mapgl")`.

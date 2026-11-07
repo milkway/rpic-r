@@ -37,9 +37,7 @@ engine's DECISIONS G11), so the upper \code{text-size} zoom stop still keeps
 labels within MapLibre's 255 px limit — the same output as
 \code{rpic --geojson --maplibre --text-scale}.}
 
-\item{fit}{zoom the map to the drawing's bounding box.
-\code{rpic_mapgl()} is the same function under its first name (an alias kept
-for code written against the development version).}
+\item{fit}{zoom the map to the drawing's bounding box.}
 }
 \value{
 \code{map}, with the source and the layers added (pipe-friendly).
@@ -90,6 +88,9 @@ the layers read — or a URL; so \code{add_rpic()} registers the source in the
 widget itself, the way \code{add_source()} does.) A map holds one pic drawing:
 the source id and the layer ids are fixed by the engine, so a map that
 already has a source \code{"pic"} or one of the six layer ids is an error.
+
+\code{rpic_mapgl()} is the same function under its first name (an alias kept
+for code written against the development version).
 }
 \section{Requirements}{
 
