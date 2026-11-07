@@ -272,10 +272,7 @@ rpic_knitr_engine <- function(options) {
   if (isTRUE(options$geo)) {
     return(.rpic_knitr_geo(options, src, circuits, texlabels))
   }
-  scale <- if (is.null(options$scale)) 2 else options$scale
-  path <- knitr::fig_path(".png", options)
-  dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
-  rpic_png(src, path, scale = scale, circuits = circuits, texlabels = texlabels)
+  path <- .knit_png(src, options, circuits = circuits, texlabels = texlabels)
   # a list `out` goes through knitr's output hooks as-is, so the figure is
   # included as a figure (a character `out` would print its path as text)
   out <- list(knitr::include_graphics(path))

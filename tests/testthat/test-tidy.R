@@ -103,12 +103,29 @@ test_that("knit_print() draws an rpic_source as a figure", {
   dir <- tempfile("knit-")
   dir.create(dir)
   rmd <- file.path(dir, "doc.Rmd")
-  writeLines(c("```{r fig1}", "library(rpic)", "pic('box \"hi\"; arrow')", "```"), rmd)
-  out <- knitr::knit(rmd, output = file.path(dir, "doc.md"), quiet = TRUE,
-                     envir = new.env())
-  md <- paste(readLines(out), collapse = "\n")
-  expect_match(md, "!\\[[^]]*\\]\\(figure/fig1-1\\.png\\)")
-  expect_true(file.exists(file.path(dir, "figure", "fig1-1.png")))
+  writeLines(c(
+    "```{r fig1}", "library(rpic)", "pic('box \"hi\"; arrow')", "```",
+    # two pic()s and a base plot in one chunk: three distinct files
+    "```{r fig2}", "pic('box')", "plot(1:3)", "pic('circle')", "```"
+  ), rmd)
+  # knit from the document's directory, so every figure lands under it
+  old <- setwd(dir)
+  on.exit(setwd(old), add = TRUE)
+  knit <- function() {
+    out <- knitr::knit(rmd, output = file.path(dir, "doc.md"), quiet = TRUE,
+                       envir = new.env())
+    paste(readLines(out), collapse = "\n")
+  }
+  md <- knit()
+  imgs <- regmatches(md, gregexpr("figure/[^)\"]+\\.png", md))[[1]]
+  expect_length(imgs, 4)
+  expect_identical(anyDuplicated(imgs), 0L)
+  expect_match(imgs[1], "^figure/fig1-rpic-[0-9a-f]{12}\\.png$")
+  expect_true(all(file.exists(file.path(dir, imgs))))
+  expect_identical(sum(grepl("^figure/fig2-[0-9]+\\.png$", imgs)), 1L)  # the base plot
+  # deterministic: re-knitting names the same files
+  md2 <- knit()
+  expect_identical(regmatches(md2, gregexpr("figure/[^)\"]+\\.png", md2))[[1]], imgs)
 })
 
 test_that("rpic_objects() is one row per object, bbox split in four", {

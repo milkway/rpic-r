@@ -209,9 +209,32 @@ print.rpic_source <- function(x, n = 6, view = interactive(), ...) {
 #' @rdname pic
 #' @exportS3Method knitr::knit_print
 knit_print.rpic_source <- function(x, options = list(), ...) {
+  # several pic()s in one chunk, or a pic() after a base plot (whose files
+  # are <label>-1.png, <label>-2.png, ...), must not share a file: name each
+  # by its content, <label>-rpic-<md5 prefix>.png — deterministic across
+  # re-knits, and the same drawing twice is the same file
+  path <- .knit_png(x, options, by_content = TRUE)
+  knitr::knit_print(knitr::include_graphics(path), options = options, ...)
+}
+
+# Render `x` (a pic() or source; `...` = circuits/texlabels) to a PNG under
+# the chunk's fig.path (chunk option `scale`, default 2) and return the path.
+# `by_content` names the file <label>-rpic-<md5 prefix>.png (knit_print);
+# otherwise it is knitr's default fig_path() (the engine's one figure).
+.knit_png <- function(x, options, by_content = FALSE, ...) {
   scale <- if (is.null(options$scale)) 2 else options$scale
+  if (by_content) {
+    tmp <- tempfile(fileext = ".png")
+    on.exit(unlink(tmp), add = TRUE)
+    rpic_png(x, tmp, scale = scale, ...)
+    number <- paste0("rpic-", substr(unname(tools::md5sum(tmp)), 1, 12))
+    path <- knitr::fig_path(".png", options, number = number)
+    dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+    file.copy(tmp, path, overwrite = TRUE)
+    return(path)
+  }
   path <- knitr::fig_path(".png", options)
   dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
-  rpic_png(x, path, scale = scale)
-  knitr::knit_print(knitr::include_graphics(path), options = options, ...)
+  rpic_png(x, path, scale = scale, ...)
+  path
 }
