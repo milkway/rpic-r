@@ -5,9 +5,25 @@
 \alias{rpic_mapgl}
 \title{Draw a pic drawing on a mapgl map}
 \usage{
-add_rpic(map, x, ..., before = NULL, text_scale = 1, fit = TRUE)
+add_rpic(
+  map,
+  x,
+  ...,
+  before = NULL,
+  text_scale = 1,
+  font = "style",
+  fit = TRUE
+)
 
-rpic_mapgl(map, x, ..., before = NULL, text_scale = 1, fit = TRUE)
+rpic_mapgl(
+  map,
+  x,
+  ...,
+  before = NULL,
+  text_scale = 1,
+  font = "style",
+  fit = TRUE
+)
 }
 \arguments{
 \item{map}{a map from \code{\link[mapgl:maplibre]{mapgl::maplibre()}} or \code{\link[mapgl:mapboxgl]{mapgl::mapboxgl()}} (Shiny
@@ -37,6 +53,10 @@ engine's DECISIONS G11), so the upper \code{text-size} zoom stop still keeps
 labels within MapLibre's 255 px limit — the same output as
 \code{rpic --geojson --maplibre --text-scale}.}
 
+\item{font}{the labels' font stack: \code{"style"} (the style's own font),
+\code{"spec"} (the engine's) or a character vector of font names; see
+Details.}
+
 \item{fit}{zoom the map to the drawing's bounding box.}
 }
 \value{
@@ -63,17 +83,22 @@ label never covers them.
 \itemize{
 \item \code{NULL} (the default): all six layers on top of the style.
 \item \code{"labels"}: under the basemap's labels — before the style's layer with
-the id \code{labels} if it has one, else before its first \code{symbol} layer
-(place names, road labels), among the style's layers and those already
-added to \code{map}. The style is read from \code{map$x$style}: a list is
+the id \code{labels} if it has one, else at the start of its trailing label
+block: before the first layer that follows the last non-\code{symbol} layer
+(fill, line, ...), among the style's layers and those already added to
+\code{map} (the \verb{pic-*} layers aside). Not simply the first \code{symbol} layer:
+CARTO's positron puts \code{waterway_label} before its roads, buildings and
+boundaries, and the drawing would go under all of them. When a
+geometry layer is the last one, there is no label block and the layers
+go on top. The style is read from \code{map$x$style}: a list is
 inspected as is (\code{layers} as a list of layers or, from
 \code{jsonlite::fromJSON()}, a data frame); a URL
 (\code{mapgl::carto_style("positron")}, ...) is fetched once per session
 (needs \code{jsonlite}; 10 s timeout). When the style cannot be read —
 offline, a \verb{mapbox://} URL, \code{mapgl::mapboxgl()}'s default style, a list
 without \code{layers}, no \code{jsonlite} — and no layer added to \code{map} answers,
-a warning says so and the layers go on top. A style without \code{symbol}
-layers puts them on top too.
+a warning says so and the layers go on top (the added layers alone
+answer when they end in \code{symbol} layers).
 \item any other string: the id of a layer to insert before — of the style
 or one already added to \code{map}. When the style can be read and has no
 such layer, a warning says so and the layers go on top (MapLibre would
@@ -88,6 +113,21 @@ the layers read — or a URL; so \code{add_rpic()} registers the source in the
 widget itself, the way \code{add_source()} does.) A map holds one pic drawing:
 the source id and the layer ids are fixed by the engine, so a map that
 already has a source \code{"pic"} or one of the six layer ids is an error.
+
+\code{font} sets the \code{text-font} of the drawing's labels (\code{pic-text},
+\code{pic-title}). The font decides where a label sits: MapLibre places the
+text box by the glyphs' vertical metrics, and a glyph server's
+"Noto Sans Regular" (CARTO's, for one) is not the one the engine's
+anchors were measured with, so a label meant to sit above a line can
+land on it. With \code{"style"} (the default) the labels use the style's own
+font: the most common \code{text-font} stack among its \code{symbol} layers,
+upright \code{Regular}/\code{Medium} stacks preferred over bold and italic ones
+(CARTO's positron: \verb{Montserrat Medium, Open Sans Regular, ...}). The
+style is read as for \code{before} (a URL is fetched once per session); when
+it cannot be read or has no such stack, the engine's font is kept,
+without a warning of its own. \code{"spec"} keeps the engine's
+\code{"Noto Sans Regular"}; any other character vector is the font stack
+itself (names the style's glyph server must serve).
 
 \code{rpic_mapgl()} is the same function under its first name (an alias kept
 for code written against the development version).

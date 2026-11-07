@@ -188,6 +188,46 @@ text_scale = 1, fit = TRUE)`.
   when the style *can* be read a missing id warns and appends, like the JS
   `console.warn`). An id among the map's own added layers needs no fetch.
 
+**Addendum (2026-11-07): `"labels"` is the trailing label block.** The
+first `symbol` layer was the wrong target. CARTO's positron (95 layers)
+has `waterway_label` at index 13, followed by 50+ tunnel, road, building
+and boundary layers, so the drawing's fills and strokes went under all of
+them (reported on the mapgl article; OpenFreeMap's positron, whose symbol
+layers all come last, hid it). The rule, shared with the engine's JS
+`attach()`: over the style's layers then the map's added ones, `pic-*`
+excluded, find the last layer whose type is not `symbol`; the target is
+the first layer (with an id) after it, and with none the layers go on top.
+A layer named `labels` still wins first; layers without an id still count
+as geometry or symbol for the block but are never the target. When the
+style cannot be read, the same rule over the added layers alone answers if
+they end in `symbol` layers, else the warning. Text layers stay on top.
+
+**Addendum (2026-11-07): `font`, the labels' font, defaults to the
+style's.** The "2 km" label of the mapgl article, placed `above` its line,
+sat on it. Not the anchor: the same layers on MapLibre 5.22 over CARTO
+positron sit right with the style's `["Montserrat Regular"]` and centred
+on the line with the spec's `["Noto Sans Regular"]` — CARTO's glyph server
+serves a Noto with other vertical metrics, and MapLibre places the text
+box by them. So `add_rpic(font = "style")` replaces the `text-font` of
+`pic-text`/`pic-title` (only) with the style's own stack, read with the
+same once-per-call style read as `before` (one download attempt per call
+even when both need it, cached per URL on success). The pick: the plain
+string-array stacks of the style's `symbol` layers (expressions skipped),
+counted by their names; among those whose first name is upright
+`Regular`/`Medium` (not `Italic`) when there is one, else among all, the
+most common, ties to the first in style order. The upright preference
+comes before the count, not as a tie-break: in positron the most common
+stack is the SemiBold/Bold one (15 layers, place names), and bold pic
+labels would misrepresent the drawing; positron gives
+`Montserrat Medium, Open Sans Regular, Noto Sans Regular, Noto Sans CJK JP
+Regular` (7 layers). `"spec"` keeps the engine's font; a character vector
+is the stack, unchecked (the glyph server must serve it). An unreadable
+style or one without stacks keeps the spec's font silently — `before`
+already warns when it needed the style, and a font is cosmetic. Since the
+default reads the style even with `before = NULL`, an `add_rpic()` on a
+URL style now downloads it once per session; the tests mock `.fetch_style`
+for the whole file (mapgl's default style is a CARTO URL).
+
 ## D10 — Drawing data are plain data frames (2026-11-07)
 
 `rpic_objects()`, `rpic_places()` and `rpic_warnings()` return a plain
