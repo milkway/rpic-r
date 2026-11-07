@@ -160,6 +160,7 @@ test_that("rpic_places() and rpic_warnings()", {
   skip_if_not_installed("sf")
   x <- suppressWarnings(rpic_sf('geo_lon = 0; geo_lat = 0\nbox gradient "red" "blue"'))
   expect_identical(rpic_warnings(x), gw)
+  expect_error(rpic_warnings(gj, circuits = TRUE), "only when `x` is pic source")
   expect_identical(nrow(rpic_warnings(rpic_sf("geo_lon = 0; geo_lat = 0\nbox"))), 0L)
 })
 

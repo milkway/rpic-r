@@ -79,6 +79,9 @@ rpic_places <- function(x, ...) {
 #' @export
 rpic_warnings <- function(x, ...) {
   if (inherits(x, c("geojson", "sf"))) {
+    if (...length()) {
+      stop("arguments in `...` apply only when `x` is pic source", call. = FALSE)
+    }
     w <- attr(x, "warnings", exact = TRUE)
     if (is.null(w) && !inherits(x, "geojson")) {
       stop("this sf data frame carries no \"warnings\" attribute (was it made by rpic_sf()?)",
