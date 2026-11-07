@@ -91,16 +91,21 @@ rpic_maplibre_layers <- function(x, ..., text_scale = 1) {
 #' * `NULL` (the default): all six layers on top of the style.
 #' * `"labels"`: under the basemap's labels — before the style's layer with
 #'   the id `labels` if it has one, else before its first `symbol` layer
-#'   (place names, road labels). The style is read from `map$x$style`: a
-#'   list is inspected as is; a URL (`mapgl::carto_style("positron")`, ...)
-#'   is fetched once (needs `jsonlite`; 10 s timeout). When the style
-#'   cannot be read — offline, a `mapbox://` URL, no `jsonlite` — a warning
-#'   says so and the layers go on top. A style without `symbol` layers puts
-#'   them on top too.
+#'   (place names, road labels), among the style's layers and those already
+#'   added to `map`. The style is read from `map$x$style`: a list is
+#'   inspected as is (`layers` as a list of layers or, from
+#'   `jsonlite::fromJSON()`, a data frame); a URL
+#'   (`mapgl::carto_style("positron")`, ...) is fetched once per session
+#'   (needs `jsonlite`; 10 s timeout). When the style cannot be read —
+#'   offline, a `mapbox://` URL, `mapgl::mapboxgl()`'s default style, a list
+#'   without `layers`, no `jsonlite` — and no layer added to `map` answers,
+#'   a warning says so and the layers go on top. A style without `symbol`
+#'   layers puts them on top too.
 #' * any other string: the id of a layer to insert before — of the style
 #'   or one already added to `map`. When the style can be read and has no
 #'   such layer, a warning says so and the layers go on top (MapLibre would
-#'   otherwise drop them).
+#'   otherwise drop them). When it cannot be read, the id is used as given,
+#'   with a warning that it could not be checked.
 #'
 #' The source is the engine's GeoJSON text, handed to the widget verbatim.
 #' (`mapgl::add_source()` takes only an `sf` object, which it re-serialises
@@ -274,25 +279,32 @@ rpic_mapgl <- function(map, x, ..., before = NULL, text_scale = 1, fit = TRUE) {
     } else {
       paste0("a ", class(text_scale)[1], " of length ", length(text_scale))
     }
-    msg <- sprintf("text_scale must be a finite number in (0, 16], got %s", shown)
-    stop(structure(
-      class = c("rpic_geo_error", "rpic_error", "error", "condition"),
-      # the engine's message and its `<message> (<kind>)` form
-      list(message = sprintf("%s (invalid_options)", msg), call = call, info = list(
-        kind = "invalid_options", message = msg, hint = NA_character_
-      ))
+    stop(.geo_condition(
+      "invalid_options",
+      sprintf("text_scale must be a finite number in (0, 16], got %s", shown),
+      call = call
     ))
   }
   sprintf('{"text_scale": %s}', sprintf("%.17g", as.double(text_scale)))
 }
 
+# An `rpic_geo_error` condition shaped like the shim's geo errors: `info`
+# holds `kind`, `message`, `hint`; the message is the engine's GeoError
+# display, `<message> (<kind>)` and ` — <hint>` when there is one.
+.geo_condition <- function(kind, message, hint = NA_character_, call = NULL) {
+  text <- sprintf("%s (%s)", message, kind)
+  if (length(hint) == 1 && !is.na(hint)) text <- paste0(text, " \u2014 ", hint)
+  structure(
+    class = c("rpic_geo_error", "rpic_error", "error", "condition"),
+    list(message = text, call = call,
+         info = list(kind = kind, message = message, hint = hint))
+  )
+}
+
 .maplibre_layers <- function(gj, opts, call) {
   res <- rpic_maplibre_layers_(as.character(gj), opts)
   if (!is.null(res$error)) {
-    stop(structure(
-      class = c("rpic_geo_error", "rpic_error", "error", "condition"),
-      list(message = res$error, call = call, info = res$info)
-    ))
+    stop(.geo_condition(res$info$kind, res$info$message, res$info$hint, call))
   }
   res$value
 }
@@ -302,43 +314,69 @@ rpic_mapgl <- function(map, x, ..., before = NULL, text_scale = 1, fit = TRUE) {
 
 # The layer id the geometry layers go before (NULL = on top), the rule of the
 # engine's JS `attach()`: "labels" = a layer whose id is `labels`, else the
-# first `symbol` layer; any other string = that layer, checked when the
-# style can be read. The candidates are the style's layers, then the layers
-# already added to the map (both precede ours at load).
+# first `symbol` layer with an id; any other string = that layer, checked
+# when the style can be read. The candidates are the style's layers, then the
+# layers already added to the map (both precede ours at load); the added ones
+# are consulted even when the style cannot be read.
 .before_id <- function(map, before) {
   if (is.null(before)) return(NULL)
-  added <- map$x$layers
-  added_ids <- vapply(added, function(l) as.character(l$id)[1], "")
-  if (before != "labels" && before %in% added_ids) return(before)
+  added <- .layer_table(map$x$layers)
+  # the style is read only when the added layers do not settle it
+  if (before == "labels" && "labels" %in% added$id) return("labels")
+  if (before != "labels" && before %in% added$id) return(before)
   style <- .style_layers(map$x$style)
   if (!is.null(style$error)) {
     if (before == "labels") {
+      first <- added$id[added$type %in% "symbol"]
+      if (length(first)) return(first[1])
       warning(sprintf(
         "rpic_mapgl(): could not read the map's style to find its labels (%s); the pic layers go on top",
         style$error), call. = FALSE)
       return(NULL)
     }
-    return(before)  # cannot check: trust the id
+    # cannot check: trust the id, but say so (MapLibre drops the geometry
+    # layers at runtime when the map has no such layer)
+    warning(sprintf(paste0(
+      "rpic_mapgl(): could not read the map's style to check that it has a layer \"%s\" ",
+      "(%s); using it as given — if the map has no such layer, MapLibre drops the pic ",
+      "geometry layers"), before, style$error), call. = FALSE)
+    return(before)
   }
-  layers <- c(style$layers, added)
-  ids <- vapply(layers, function(l) as.character(l$id %||% NA_character_)[1], "")
-  types <- vapply(layers, function(l) as.character(l$type %||% NA_character_)[1], "")
+  all <- .layer_table(c(style$layers, map$x$layers))
   if (before == "labels") {
-    if ("labels" %in% ids) return("labels")
-    first <- which(types %in% "symbol")
-    return(if (length(first)) ids[first[1]] else NULL)
+    if ("labels" %in% all$id) return("labels")
+    first <- all$id[all$type %in% "symbol"]
+    return(if (length(first)) first[1] else NULL)
   }
-  if (before %in% ids) return(before)
+  if (before %in% all$id) return(before)
   warning(sprintf(
     "rpic_mapgl(): the map's style has no layer \"%s\"; the pic layers go on top", before
   ), call. = FALSE)
   NULL
 }
 
+# Layers as a table of `id` and `type`, without the layers that have no id
+# (never a `before_id`).
+.layer_table <- function(layers) {
+  str1 <- function(v) {
+    v <- if (is.null(v) || !length(v)) NA_character_ else as.character(v[[1]])
+    if (!length(v) || is.na(v) || !nzchar(v)) NA_character_ else v
+  }
+  id <- vapply(layers, function(l) if (is.list(l)) str1(l$id) else NA_character_, "")
+  type <- vapply(layers, function(l) if (is.list(l)) str1(l$type) else NA_character_, "")
+  keep <- !is.na(id)
+  list(id = unname(id[keep]), type = unname(type[keep]))
+}
+
 # The style's layers: list(layers =) or list(error =). A list style is read as
-# is; an http(s) URL is fetched (`.fetch_style()`, mocked in the tests).
+# is — also one parsed by `jsonlite::fromJSON()` with its default
+# simplification, whose `layers` is a data frame; an http(s) URL is fetched
+# (`.fetch_style()`, memoised, mocked in the tests).
 .style_layers <- function(style) {
-  if (is.list(style)) return(list(layers = style$layers))
+  if (is.null(style)) {
+    return(list(error = "the map's default style cannot be read here"))
+  }
+  if (is.list(style)) return(.style_list_layers(style))
   if (!is.character(style) || length(style) != 1 || is.na(style)) {
     return(list(error = "the style is neither a list nor a URL"))
   }
@@ -348,11 +386,35 @@ rpic_mapgl <- function(map, x, ..., before = NULL, text_scale = 1, fit = TRUE) {
   if (!requireNamespace("jsonlite", quietly = TRUE)) {
     return(list(error = "reading a style URL needs the 'jsonlite' package"))
   }
-  tryCatch({
-    js <- .fetch_style(style)
-    if (!is.list(js) || !is.list(js$layers)) stop("it has no `layers` array")
-    list(layers = js$layers)
-  }, error = function(e) list(error = conditionMessage(e)))
+  tryCatch(
+    .style_list_layers(.fetch_style_cached(style)),
+    error = function(e) list(error = conditionMessage(e))
+  )
+}
+
+.style_list_layers <- function(js) {
+  layers <- if (is.list(js)) js$layers
+  if (is.data.frame(layers)) {
+    # fromJSON(simplifyVector = TRUE): one row per layer; only `id` and
+    # `type` are read
+    col <- function(k) if (k %in% names(layers)) as.character(layers[[k]]) else
+      rep(NA_character_, nrow(layers))
+    id <- col("id")
+    type <- col("type")
+    layers <- lapply(seq_len(nrow(layers)), function(i) list(id = id[i], type = type[i]))
+  }
+  if (!is.list(layers)) return(list(error = "the style has no `layers` array"))
+  list(layers = layers)
+}
+
+# One download per style URL per session: several maps in a document share it.
+.style_cache <- new.env(parent = emptyenv())
+
+.fetch_style_cached <- function(url) {
+  if (!exists(url, envir = .style_cache, inherits = FALSE)) {
+    assign(url, .fetch_style(url), envir = .style_cache)
+  }
+  get(url, envir = .style_cache, inherits = FALSE)
 }
 
 .fetch_style <- function(url, timeout = 10) {

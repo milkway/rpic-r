@@ -58,16 +58,21 @@ label never covers them.
 \item \code{NULL} (the default): all six layers on top of the style.
 \item \code{"labels"}: under the basemap's labels — before the style's layer with
 the id \code{labels} if it has one, else before its first \code{symbol} layer
-(place names, road labels). The style is read from \code{map$x$style}: a
-list is inspected as is; a URL (\code{mapgl::carto_style("positron")}, ...)
-is fetched once (needs \code{jsonlite}; 10 s timeout). When the style
-cannot be read — offline, a \verb{mapbox://} URL, no \code{jsonlite} — a warning
-says so and the layers go on top. A style without \code{symbol} layers puts
-them on top too.
+(place names, road labels), among the style's layers and those already
+added to \code{map}. The style is read from \code{map$x$style}: a list is
+inspected as is (\code{layers} as a list of layers or, from
+\code{jsonlite::fromJSON()}, a data frame); a URL
+(\code{mapgl::carto_style("positron")}, ...) is fetched once per session
+(needs \code{jsonlite}; 10 s timeout). When the style cannot be read —
+offline, a \verb{mapbox://} URL, \code{mapgl::mapboxgl()}'s default style, a list
+without \code{layers}, no \code{jsonlite} — and no layer added to \code{map} answers,
+a warning says so and the layers go on top. A style without \code{symbol}
+layers puts them on top too.
 \item any other string: the id of a layer to insert before — of the style
 or one already added to \code{map}. When the style can be read and has no
 such layer, a warning says so and the layers go on top (MapLibre would
-otherwise drop them).
+otherwise drop them). When it cannot be read, the id is used as given,
+with a warning that it could not be checked.
 }
 
 The source is the engine's GeoJSON text, handed to the widget verbatim.

@@ -68,7 +68,8 @@ Two arguments tune how the drawing sits on the basemap:
   names stay readable over the box's fill. The drawing's own labels
   (`pic-text`, `pic-title`) still go on top, so a basemap label never
   covers "Marco Zero". The style is read to find that layer: here
-  `carto_style("positron")` is a URL, fetched once when the map is built
+  `carto_style("positron")` is a URL, fetched once per R session when the
+  first map is built
   (offline, a warning says so and everything goes on top). `before` also
   takes a layer id (`before = "water"`), and `NULL`, the default, adds
   every layer on top — the rule of the engine's JavaScript `attach()`.

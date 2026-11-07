@@ -172,12 +172,18 @@ text_scale = 1, fit = TRUE)`.
   is `labels`, else the first `symbol` layer, looked up among the style's
   layers and then the layers already added to the map. The JS reads
   `map.getStyle()` in the browser; R builds the widget before any browser
-  exists, so it reads `map$x$style` — a list as is, an http(s) URL fetched
-  once with `jsonlite` (10 s timeout, `.fetch_style()`, mocked in the
-  tests). The alternative — resolving in the widget's JavaScript — would
+  exists, so it reads `map$x$style` — a list as is (its `layers` may be a
+  data frame, as `jsonlite::fromJSON()` simplifies it), an http(s) URL
+  fetched with `jsonlite` (10 s timeout, `.fetch_style()`, mocked in the
+  tests) and memoised per URL for the session, so the maps of one document
+  download a style once. The layers already added to the map are
+  consulted first and also when the style cannot be read (the JS
+  `map.getLayer('labels')` / `getStyle()` see them too); layers without an
+  id are never a target. The alternative — resolving in the widget's JavaScript — would
   need a hook into mapgl's init that mapgl does not offer. When the style
-  cannot be read (offline, `mapbox://`, no jsonlite), `"labels"` warns and
-  appends; an explicit id is then trusted unchecked (MapLibre drops a
-  layer whose `beforeId` is missing, so when the style *can* be read a
-  missing id warns and appends, like the JS `console.warn`). An id among
-  the map's own added layers needs no fetch.
+  cannot be read (offline, `mapbox://`, mapboxgl()'s `NULL` default, a list
+  without `layers`, no jsonlite), `"labels"` warns and appends; an
+  explicit id is then used as given with a warning that it could not be
+  checked (MapLibre drops a layer whose `beforeId` is missing at runtime;
+  when the style *can* be read a missing id warns and appends, like the JS
+  `console.warn`). An id among the map's own added layers needs no fetch.

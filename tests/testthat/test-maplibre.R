@@ -230,6 +230,12 @@ before_ids <- function(m) {
 style_list <- function(...) {
   list(version = 8, sources = list(), layers = list(...))
 }
+# Style URLs are memoised per session: each test that mocks the download
+# starts from an empty cache (the URLs are example.org ones, used only here).
+clear_style_cache <- function() {
+  cache <- get(".style_cache", envir = asNamespace("rpic"))
+  rm(list = ls(cache, all.names = TRUE), envir = cache)
+}
 
 test_that("rpic_mapgl before = NULL appends all six layers", {
   skip_if_not_installed("mapgl")
@@ -264,6 +270,7 @@ test_that("rpic_mapgl before = \"labels\": geometry under the first symbol layer
 test_that("rpic_mapgl before = \"labels\" fetches a style URL once", {
   skip_if_not_installed("mapgl")
   skip_if_not_installed("jsonlite")
+  clear_style_cache()
   fetched <- character()
   local_mocked_bindings(.fetch_style = function(url, ...) {
     fetched <<- c(fetched, url)
@@ -273,12 +280,91 @@ test_that("rpic_mapgl before = \"labels\" fetches a style URL once", {
   m <- rpic_mapgl(mapgl::maplibre(style = url), read_pic("radius"), before = "labels")
   expect_identical(fetched, url)
   expect_identical(before_ids(m), c(rep("place_city", 4), NA, NA))
+  # a second map with the same style: no second download
+  m2 <- rpic_mapgl(mapgl::maplibre(style = url), read_pic("callout"), before = "labels")
+  expect_identical(fetched, url)
+  expect_identical(before_ids(m2), c(rep("place_city", 4), NA, NA))
+  # a failed download is not cached
+  clear_style_cache()
+  n <- 0
+  local_mocked_bindings(.fetch_style = function(url, ...) {
+    n <<- n + 1
+    stop("offline")
+  })
+  for (i in 1:2) {
+    expect_warning(rpic_mapgl(mapgl::maplibre(style = url), read_pic("radius"),
+                              before = "labels"), "offline")
+  }
+  expect_identical(n, 2)
+})
+
+test_that("rpic_mapgl reads a style list from jsonlite's default simplification", {
+  skip_if_not_installed("mapgl")
+  skip_if_not_installed("jsonlite")
+  json <- jsonlite::toJSON(style_list(
+    list(id = "bg", type = "background", paint = list(`background-color` = "#fff")),
+    list(id = "water", type = "fill", source = "osm"),
+    list(id = "place_city", type = "symbol", source = "osm")
+  ), auto_unbox = TRUE)
+  st <- jsonlite::fromJSON(json)            # simplifyVector = TRUE
+  expect_s3_class(st$layers, "data.frame")
+  m <- rpic_mapgl(mapgl::maplibre(style = st), read_pic("radius"), before = "labels")
+  expect_identical(before_ids(m), c(rep("place_city", 4), NA, NA))
+  m2 <- rpic_mapgl(mapgl::maplibre(style = st), read_pic("radius"), before = "water")
+  expect_identical(before_ids(m2), c(rep("water", 4), NA, NA))
+  # the same through a URL whose download simplifies
+  clear_style_cache()
+  local_mocked_bindings(.fetch_style = function(url, ...) jsonlite::fromJSON(json))
+  m3 <- rpic_mapgl(mapgl::maplibre(style = "https://example.org/df.json"),
+                   read_pic("radius"), before = "labels")
+  expect_identical(before_ids(m3), c(rep("place_city", 4), NA, NA))
+})
+
+test_that("rpic_mapgl: a list style without layers warns; layers without an id are skipped", {
+  skip_if_not_installed("mapgl")
+  src <- read_pic("radius")
+  expect_warning(m <- rpic_mapgl(mapgl::maplibre(style = list(version = 8, sources = list())),
+                                 src, before = "labels"),
+                 "could not read the map's style.*no `layers` array")
+  expect_identical(before_ids(m), rep(NA_character_, 6))
+  # a symbol layer without an id is never a target: the next one is
+  st <- style_list(list(type = "symbol"), list(id = NA, type = "symbol"),
+                   list(id = "names", type = "symbol"))
+  m2 <- rpic_mapgl(mapgl::maplibre(style = st), src, before = "labels")
+  expect_identical(before_ids(m2), c(rep("names", 4), NA, NA))
+  # only id-less symbol layers: on top, no NA before_id
+  st2 <- style_list(list(type = "symbol"))
+  m3 <- rpic_mapgl(mapgl::maplibre(style = st2), src, before = "labels")
+  expect_identical(before_ids(m3), rep(NA_character_, 6))
+})
+
+test_that("rpic_mapgl before = \"labels\" consults the map's added layers when the style is unreadable", {
+  skip_if_not_installed("mapgl")
+  src <- read_pic("radius")
+  # mapboxgl()'s default style is NULL
+  mb <- mapgl::mapboxgl(access_token = "pk.test")
+  expect_null(mb$x$style)
+  expect_warning(m <- rpic_mapgl(mb, src, before = "labels"),
+                 "the map's default style cannot be read here")
+  expect_identical(before_ids(m), rep(NA_character_, 6))
+  # an added symbol layer answers without the style
+  mb2 <- mapgl::add_layer(mapgl::mapboxgl(access_token = "pk.test"), "my-names", "symbol",
+                          source = "x")
+  expect_no_warning(m2 <- rpic_mapgl(mb2, src, before = "labels"))
+  expect_identical(before_ids(m2)[-1], c(rep("my-names", 4), NA, NA))
+  # an added layer literally named `labels` wins
+  mb3 <- mapgl::add_layer(mapgl::mapboxgl(access_token = "pk.test"), "names", "symbol",
+                          source = "x")
+  mb3 <- mapgl::add_layer(mb3, "labels", "fill", source = "x")
+  m3 <- rpic_mapgl(mb3, src, before = "labels")
+  expect_identical(before_ids(m3)[-(1:2)], c(rep("labels", 4), NA, NA))
 })
 
 test_that("rpic_mapgl before = \"labels\" warns and appends when the style cannot be read", {
   skip_if_not_installed("mapgl")
   skip_if_not_installed("jsonlite")
   src <- read_pic("radius")
+  clear_style_cache()
   local_mocked_bindings(.fetch_style = function(url, ...) stop("cannot open the connection"))
   expect_warning(m <- rpic_mapgl(mapgl::maplibre(style = "https://example.org/s.json"), src,
                                  before = "labels"),
@@ -300,6 +386,7 @@ test_that("rpic_mapgl before = <layer id>", {
   m <- rpic_mapgl(mapgl::maplibre(style = st), src, before = "roads")
   expect_identical(before_ids(m), c(rep("roads", 4), NA, NA))
   # a layer added to the map before is a target too (no style needed)
+  clear_style_cache()
   local_mocked_bindings(.fetch_style = function(url, ...) stop("must not be called"))
   m2 <- mapgl::add_layer(mapgl::maplibre(style = "https://example.org/s.json"),
                          "mine", "fill", source = "x")
@@ -309,10 +396,18 @@ test_that("rpic_mapgl before = <layer id>", {
   expect_warning(m3 <- rpic_mapgl(mapgl::maplibre(style = st), src, before = "nope"),
                  "no layer \"nope\"")
   expect_identical(before_ids(m3), rep(NA_character_, 6))
-  # a style that cannot be read: the id is trusted
+  # a style that cannot be read: the id is used, with a warning that it is unchecked
+  clear_style_cache()
   local_mocked_bindings(.fetch_style = function(url, ...) stop("offline"))
-  m4 <- rpic_mapgl(mapgl::maplibre(style = "https://example.org/s.json"), src, before = "roads")
+  expect_warning(
+    m4 <- rpic_mapgl(mapgl::maplibre(style = "https://example.org/s.json"), src,
+                     before = "roads"),
+    "could not read the map's style to check that it has a layer \"roads\".*offline.*drops"
+  )
   expect_identical(before_ids(m4), c(rep("roads", 4), NA, NA))
+  expect_warning(m5 <- rpic_mapgl(mapgl::mapboxgl(access_token = "pk.test"), src,
+                                  before = "roads"), "default style cannot be read")
+  expect_identical(before_ids(m5), c(rep("roads", 4), NA, NA))
   # bad values
   expect_error(rpic_mapgl(mapgl::maplibre(), src, before = c("a", "b")), "`before` must be")
   expect_error(rpic_mapgl(mapgl::maplibre(), src, before = 1), "`before` must be")
