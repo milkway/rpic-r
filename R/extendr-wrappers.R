@@ -15,4 +15,8 @@ rpic_manifest_ <- function(src, circuits, texlabels) .Call(wrap__rpic_manifest_,
 
 rpic_scene_ <- function(src, circuits, texlabels, flatten, outline) .Call(wrap__rpic_scene_, src, circuits, texlabels, flatten, outline)
 
+rpic_compile_ <- function(src, circuits, texlabels, scene, flatten, outline) .Call(wrap__rpic_compile_, src, circuits, texlabels, scene, flatten, outline)
+
+rpic_geojson_ <- function(src, circuits, texlabels, options_json) .Call(wrap__rpic_geojson_, src, circuits, texlabels, options_json)
+
 # nolint end
