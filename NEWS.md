@@ -1,7 +1,7 @@
 # rpic (development version)
 
-Tracks the rpic engine 0.13.0 (vendored crates `rpic-core`/`rpic-render`
-0.13.0). The R functions and their arguments are unchanged; rendering is
+Tracks the rpic engine 0.14.0 (vendored crates `rpic-core`/`rpic-render`
+0.14.0). The R functions and their arguments are unchanged; rendering is
 byte-identical to 0.12.1 over the engine's whole corpus. What reaches R users
 through the pic source and the JSON outputs:
 

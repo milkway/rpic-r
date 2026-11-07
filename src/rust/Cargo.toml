@@ -15,8 +15,8 @@ path = 'document.rs'
 
 [dependencies]
 extendr-api = '*'
-rpic-core = "0.13.0"
-rpic-render = "0.13.0"
+rpic-core = "0.14.0"
+rpic-render = "0.14.0"
 
 [profile.release]
 lto = true
