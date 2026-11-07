@@ -255,12 +255,15 @@ fn rpic_geojson_(src: &str, circuits: bool, texlabels: bool, options_json: &str)
 // A geopic FeatureCollection (JSON text) → the MapLibre style-spec layers
 // that draw it (geopic-core `maplibre::layers_json`, docs/geopic.md § 6), as
 // an R list of named lists in draw order. One-element arrays stay lists so
-// the specs serialise back to the engine's JSON (value.rs). Failure =
+// the specs serialise back to the engine's JSON (value.rs). `opts_json` is
+// the engine's layer options as JSON text (`{"text_scale": 1.5}`; `""` = the
+// defaults; `layers_json_with`, DECISIONS G11) — out-of-range values and
+// unknown keys are an `invalid_options` geo error. Failure =
 // `list(error =, info = list(kind, message, hint))`, a geo error.
 #[extendr]
-fn rpic_maplibre_layers_(fc_json: &str) -> List {
+fn rpic_maplibre_layers_(fc_json: &str, opts_json: &str) -> List {
     let internal = |msg: String| geopic_core::GeoError::new("internal", msg);
-    let layers = geopic_core::maplibre::layers_json(fc_json)
+    let layers = geopic_core::maplibre::layers_json_with(fc_json, opts_json)
         .and_then(|text| {
             serde_json::from_str::<serde_json::Value>(&text)
                 .map_err(|e| internal(format!("internal: layers JSON does not parse: {e}")))

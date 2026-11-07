@@ -1,0 +1,654 @@
+[
+ {
+  "filter": [
+   "==",
+   [
+    "geometry-type"
+   ],
+   "Polygon"
+  ],
+  "id": "pic-fill",
+  "paint": {
+   "fill-color": [
+    "coalesce",
+    [
+     "get",
+     "fill"
+    ],
+    "#000000"
+   ],
+   "fill-opacity": [
+    "case",
+    [
+     "has",
+     "fill"
+    ],
+    [
+     "coalesce",
+     [
+      "get",
+      "fill-opacity"
+     ],
+     0.55
+    ],
+    0
+   ]
+  },
+  "source": "pic",
+  "type": "fill"
+ },
+ {
+  "filter": [
+   "all",
+   [
+    "any",
+    [
+     "==",
+     [
+      "geometry-type"
+     ],
+     "Polygon"
+    ],
+    [
+     "==",
+     [
+      "geometry-type"
+     ],
+     "LineString"
+    ]
+   ],
+   [
+    "has",
+    "stroke"
+   ],
+   [
+    "!",
+    [
+     "has",
+     "geopic:dash"
+    ]
+   ]
+  ],
+  "id": "pic-stroke",
+  "layout": {
+   "line-cap": "round",
+   "line-join": "round"
+  },
+  "paint": {
+   "line-color": [
+    "get",
+    "stroke"
+   ],
+   "line-opacity": [
+    "coalesce",
+    [
+     "get",
+     "stroke-opacity"
+    ],
+    1
+   ],
+   "line-width": [
+    "interpolate",
+    [
+     "exponential",
+     2
+    ],
+    [
+     "zoom"
+    ],
+    0,
+    [
+     "max",
+     1,
+     [
+      "*",
+      [
+       "*",
+       [
+        "coalesce",
+        [
+         "get",
+         "stroke-width"
+        ],
+        0.8
+       ],
+       5.555555555555555
+      ],
+      1.2903602064681814e-05
+     ]
+    ],
+    24,
+    [
+     "max",
+     1,
+     [
+      "*",
+      [
+       "*",
+       [
+        "coalesce",
+        [
+         "get",
+         "stroke-width"
+        ],
+        0.8
+       ],
+       5.555555555555555
+      ],
+      216.48651901721277
+     ]
+    ]
+   ]
+  },
+  "source": "pic",
+  "type": "line"
+ },
+ {
+  "filter": [
+   "all",
+   [
+    "any",
+    [
+     "==",
+     [
+      "geometry-type"
+     ],
+     "Polygon"
+    ],
+    [
+     "==",
+     [
+      "geometry-type"
+     ],
+     "LineString"
+    ]
+   ],
+   [
+    "has",
+    "stroke"
+   ],
+   [
+    "has",
+    "geopic:dash"
+   ]
+  ],
+  "id": "pic-stroke-dashed",
+  "layout": {
+   "line-cap": "round",
+   "line-join": "round"
+  },
+  "paint": {
+   "line-color": [
+    "get",
+    "stroke"
+   ],
+   "line-dasharray": [
+    3,
+    2
+   ],
+   "line-opacity": [
+    "coalesce",
+    [
+     "get",
+     "stroke-opacity"
+    ],
+    1
+   ],
+   "line-width": [
+    "interpolate",
+    [
+     "exponential",
+     2
+    ],
+    [
+     "zoom"
+    ],
+    0,
+    [
+     "max",
+     1,
+     [
+      "*",
+      [
+       "*",
+       [
+        "coalesce",
+        [
+         "get",
+         "stroke-width"
+        ],
+        0.8
+       ],
+       5.555555555555555
+      ],
+      1.2903602064681814e-05
+     ]
+    ],
+    24,
+    [
+     "max",
+     1,
+     [
+      "*",
+      [
+       "*",
+       [
+        "coalesce",
+        [
+         "get",
+         "stroke-width"
+        ],
+        0.8
+       ],
+       5.555555555555555
+      ],
+      216.48651901721277
+     ]
+    ]
+   ]
+  },
+  "source": "pic",
+  "type": "line"
+ },
+ {
+  "filter": [
+   "==",
+   [
+    "get",
+    "geopic:kind"
+   ],
+   "dot"
+  ],
+  "id": "pic-dot",
+  "paint": {
+   "circle-color": [
+    "coalesce",
+    [
+     "get",
+     "fill"
+    ],
+    "#000000"
+   ],
+   "circle-radius": [
+    "interpolate",
+    [
+     "exponential",
+     2
+    ],
+    [
+     "zoom"
+    ],
+    0,
+    [
+     "max",
+     2,
+     [
+      "*",
+      [
+       "*",
+       [
+        "coalesce",
+        [
+         "get",
+         "geopic:radius_in"
+        ],
+        0.04
+       ],
+       400.0
+      ],
+      1.2903602064681814e-05
+     ]
+    ],
+    24,
+    [
+     "max",
+     2,
+     [
+      "*",
+      [
+       "*",
+       [
+        "coalesce",
+        [
+         "get",
+         "geopic:radius_in"
+        ],
+        0.04
+       ],
+       400.0
+      ],
+      216.48651901721277
+     ]
+    ]
+   ]
+  },
+  "source": "pic",
+  "type": "circle"
+ },
+ {
+  "filter": [
+   "==",
+   [
+    "get",
+    "geopic:kind"
+   ],
+   "text"
+  ],
+  "id": "pic-text",
+  "layout": {
+   "text-allow-overlap": true,
+   "text-anchor": [
+    "match",
+    [
+     "get",
+     "geopic:anchor"
+    ],
+    "c",
+    "center",
+    "n",
+    "top",
+    "s",
+    "bottom",
+    "e",
+    "right",
+    "w",
+    "left",
+    "ne",
+    "top-right",
+    "nw",
+    "top-left",
+    "se",
+    "bottom-right",
+    "sw",
+    "bottom-left",
+    "center"
+   ],
+   "text-field": [
+    "case",
+    [
+     "==",
+     [
+      "slice",
+      [
+       "get",
+       "geopic:text"
+      ],
+      [
+       "max",
+       0,
+       [
+        "-",
+        [
+         "length",
+         [
+          "get",
+          "geopic:text"
+         ]
+        ],
+        1
+       ]
+      ]
+     ],
+     "\n"
+    ],
+    [
+     "concat",
+     [
+      "get",
+      "geopic:text"
+     ],
+     " "
+    ],
+    [
+     "get",
+     "geopic:text"
+    ]
+   ],
+   "text-font": [
+    "Noto Sans Regular"
+   ],
+   "text-ignore-placement": true,
+   "text-line-height": 1,
+   "text-pitch-alignment": "map",
+   "text-rotate": [
+    "*",
+    -1,
+    [
+     "coalesce",
+     [
+      "get",
+      "geopic:rotation"
+     ],
+     0
+    ]
+   ],
+   "text-rotation-alignment": "map",
+   "text-size": [
+    "interpolate",
+    [
+     "exponential",
+     2
+    ],
+    [
+     "zoom"
+    ],
+    0,
+    [
+     "max",
+     1,
+     [
+      "*",
+      [
+       "*",
+       [
+        "coalesce",
+        [
+         "get",
+         "geopic:font_size"
+        ],
+        11
+       ],
+       8.333333333333332
+      ],
+      1.2903602064681814e-05
+     ]
+    ],
+    17,
+    [
+     "min",
+     255,
+     [
+      "max",
+      1,
+      [
+       "*",
+       [
+        "*",
+        [
+         "coalesce",
+         [
+          "get",
+          "geopic:font_size"
+         ],
+         11
+        ],
+        8.333333333333332
+       ],
+       1.6913009298219748
+      ]
+     ]
+    ]
+   ]
+  },
+  "paint": {
+   "text-color": "#0f172a",
+   "text-halo-color": "#ffffff",
+   "text-halo-width": 1.5
+  },
+  "source": "pic",
+  "type": "symbol"
+ },
+ {
+  "filter": [
+   "==",
+   [
+    "get",
+    "geopic:kind"
+   ],
+   "title"
+  ],
+  "id": "pic-title",
+  "layout": {
+   "text-allow-overlap": true,
+   "text-anchor": [
+    "match",
+    [
+     "get",
+     "geopic:anchor"
+    ],
+    "c",
+    "center",
+    "n",
+    "top",
+    "s",
+    "bottom",
+    "e",
+    "right",
+    "w",
+    "left",
+    "ne",
+    "top-right",
+    "nw",
+    "top-left",
+    "se",
+    "bottom-right",
+    "sw",
+    "bottom-left",
+    "center"
+   ],
+   "text-field": [
+    "case",
+    [
+     "==",
+     [
+      "slice",
+      [
+       "get",
+       "geopic:text"
+      ],
+      [
+       "max",
+       0,
+       [
+        "-",
+        [
+         "length",
+         [
+          "get",
+          "geopic:text"
+         ]
+        ],
+        1
+       ]
+      ]
+     ],
+     "\n"
+    ],
+    [
+     "concat",
+     [
+      "get",
+      "geopic:text"
+     ],
+     " "
+    ],
+    [
+     "get",
+     "geopic:text"
+    ]
+   ],
+   "text-font": [
+    "Noto Sans Regular"
+   ],
+   "text-ignore-placement": true,
+   "text-line-height": 1,
+   "text-pitch-alignment": "map",
+   "text-rotate": [
+    "*",
+    -1,
+    [
+     "coalesce",
+     [
+      "get",
+      "geopic:rotation"
+     ],
+     0
+    ]
+   ],
+   "text-rotation-alignment": "map",
+   "text-size": [
+    "interpolate",
+    [
+     "exponential",
+     2
+    ],
+    [
+     "zoom"
+    ],
+    0,
+    [
+     "max",
+     1,
+     [
+      "*",
+      [
+       "*",
+       [
+        "coalesce",
+        [
+         "get",
+         "geopic:font_size"
+        ],
+        11
+       ],
+       8.333333333333332
+      ],
+      1.2903602064681814e-05
+     ]
+    ],
+    17,
+    [
+     "min",
+     255,
+     [
+      "max",
+      1,
+      [
+       "*",
+       [
+        "*",
+        [
+         "coalesce",
+         [
+          "get",
+          "geopic:font_size"
+         ],
+         11
+        ],
+        8.333333333333332
+       ],
+       1.6913009298219748
+      ]
+     ]
+    ]
+   ]
+  },
+  "paint": {
+   "text-color": "#0f172a",
+   "text-halo-color": "#ffffff",
+   "text-halo-width": 1.5
+  },
+  "source": "pic",
+  "type": "symbol"
+ }
+]

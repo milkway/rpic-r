@@ -39,6 +39,12 @@ descriptors with colors resolved to hex, text as text with baseline
 anchor points, every variable's final value under \code{vars}, and items in
 draw order carrying the same stable \verb{s<N>} ids as the SVG. Use it to
 build your own backend (maps, TikZ, editors) on top of rpic's layout.
+Items with text carry \code{text_center} (the centre the lines are laid out
+around) and \code{text_rows} (the height of the author's label stack, blank
+rows included); each text line carries its \code{row} in that stack, so the
+visible lines of \verb{box "" "below"} keep their place. Blocks made by a
+macro call carry \code{call} (\code{name}, normalized \code{args}, and \code{raw_args}: each
+argument as written, with its source position).
 }
 \details{
 Anything the SVG paints that the scene cannot represent is reported as an

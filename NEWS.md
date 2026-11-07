@@ -40,11 +40,45 @@
   GeoJSON text in a `"geojson"` attribute for both. `vignette("maps")`
   uses the helper; live maps are in the website article "Interactive maps
   with mapgl" (<https://milkway.github.io/rpic-r/articles/mapgl.html>), which is not shipped in the package.
+* `rpic_maplibre_layers()` and `rpic_mapgl()` gain `text_scale` (engine
+  0.16.0's layer option): it multiplies every label's font size, a number
+  in (0, 16], default 1 (unchanged output). Strokes and dots keep their
+  ground sizes. Out of range or not a number: an `rpic_geo_error` with
+  `e$info$kind == "invalid_options"`.
+* `rpic_mapgl()` gains `before`: `"labels"` puts the drawing's shapes
+  (`pic-fill`, `pic-stroke`, `pic-stroke-dashed`, `pic-dot`) under the
+  basemap's labels — before the style's layer `labels`, else its first
+  `symbol` layer — while the drawing's own labels (`pic-text`,
+  `pic-title`) stay on top, the rule of the engine's JavaScript
+  `attach()`; a layer id inserts before that layer; `NULL` (the default)
+  appends as before. A style given as a URL is fetched once to find the
+  layer; when it cannot be read, a warning, and the layers go on top.
 
 ## Bug fixes
 
 * The knitr engine includes the rendered PNG as a figure again; with
   current knitr it printed the figure's path as text output.
+
+## Engine 0.16.0
+
+Tracks the rpic engine 0.16.0 (vendored crates `rpic-core`/`rpic-render`/
+`geopic-core` 0.16.0). What reaches R users:
+
+* Blank rows of a label stack are kept in `geopic:text` (`box "" "below"`
+  gives `"\nbelow"`), so a map draws "below" one row under the centre, as
+  the SVG does; the `pic-text`/`pic-title` layers set `text-line-height`
+  to 1 and pad a trailing empty row so MapLibre keeps it.
+* Scene (`rpic_scene()`, `rpic_compile(scene = TRUE)`): each text line
+  carries `row`, its row in the label stack, and the item `text_rows`, the
+  stack's height; blocks made by a macro call carry `call$raw_args`, each
+  argument as written (`1e-9` stays `1e-9`) with its source position.
+* Labels on flat macro calls: `R1: resistor(A, B)` names the group of
+  objects the call draws, like a block (`R1.n`, `R1.start`), when the
+  macro body could not take a label before (it starts with assignments,
+  a label or a control statement). Sources that compiled before render
+  the same.
+* troff passthrough: a `+` line right after a passthrough line continues
+  it (the bundle's `passthrough` entry gains `end_line`).
 
 ## Engine 0.15.1
 

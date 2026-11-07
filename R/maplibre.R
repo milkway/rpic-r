@@ -33,6 +33,14 @@
 #'   edited columns are not seen), or pic source code, which is
 #'   georeferenced with `rpic_geojson(x, ...)`.
 #' @param ... arguments passed to [rpic_geojson()] when `x` is pic source.
+#' @param text_scale multiplies every label's font size (`pic-text` and
+#'   `pic-title`): a finite number in (0, 16]. The default, 1, keeps the
+#'   labels true to the ground; 1.5 draws them half as large again, so they
+#'   stay legible further out. Strokes and dots keep their ground sizes. The
+#'   scale is applied inside the engine's sizing (`LayerOptions`, the
+#'   engine's DECISIONS G11), so the upper `text-size` zoom stop still keeps
+#'   labels within MapLibre's 255 px limit — the same output as
+#'   `rpic --geojson --maplibre --text-scale`.
 #' @return a list of six layer specs, each a named list with `id`, `type`,
 #'   `source` (`"pic"`), `filter`, `paint` and (for some) `layout`, in draw
 #'   order. JSON arrays are atomic vectors when they hold two or more
@@ -41,7 +49,8 @@
 #'   htmlwidgets does — writes the engine's JSON back.
 #' @section Errors:
 #' A JSON text that is not a FeatureCollection raises an `rpic_geo_error`
-#' with `e$info$kind == "invalid_geojson"`.
+#' with `e$info$kind == "invalid_geojson"`; a `text_scale` that is not a
+#' single number in (0, 16] one with `e$info$kind == "invalid_options"`.
 #' @seealso [rpic_mapgl()]; the article
 #'   [Interactive maps with mapgl](https://milkway.github.io/rpic-r/articles/mapgl.html).
 #' @examples
@@ -51,10 +60,16 @@
 #' "Recife" at (0, 0)')
 #' vapply(layers, function(l) l$id, "")
 #' layers[[2]]$paint$`line-width`[1:3]   # "interpolate", exponential 2, zoom
+#'
+#' # larger labels: the text-size factor of pic-text grows by 1.5
+#' big <- rpic_maplibre_layers('geo_lon = -34.8711; geo_lat = -8.0631
+#' geo_scale = 1000
+#' "Recife" at (0, 0)', text_scale = 1.5)
 #' @export
-rpic_maplibre_layers <- function(x, ...) {
+rpic_maplibre_layers <- function(x, ..., text_scale = 1) {
+  opts <- .layer_options(text_scale, sys.call())
   gj <- .geo_text(x, ..., call = sys.call())
-  .maplibre_layers(gj, sys.call())
+  .maplibre_layers(gj, opts, sys.call())
 }
 
 #' Draw a pic drawing on a mapgl map
@@ -65,6 +80,32 @@ rpic_maplibre_layers <- function(x, ...) {
 #' [rpic_maplibre_layers()] (added with [mapgl::add_layer()]) and, when
 #' `fit`, a [mapgl::fit_bounds()] on the drawing (48 px of padding, zoom 19
 #' at most — the fit of the engine's JavaScript `attach()`).
+#'
+#' `before` decides where the drawing goes among the style's layers, by the
+#' rule of the engine's JavaScript `attach(map, fc, { before })`: only the
+#' geometry layers (`pic-fill`, `pic-stroke`, `pic-stroke-dashed`,
+#' `pic-dot`) are inserted before the chosen layer; the drawing's own
+#' labels (`pic-text`, `pic-title`) are always added on top, so a basemap
+#' label never covers them.
+#'
+#' * `NULL` (the default): all six layers on top of the style.
+#' * `"labels"`: under the basemap's labels — before the style's layer with
+#'   the id `labels` if it has one, else before its first `symbol` layer
+#'   (place names, road labels), among the style's layers and those already
+#'   added to `map`. The style is read from `map$x$style`: a list is
+#'   inspected as is (`layers` as a list of layers or, from
+#'   `jsonlite::fromJSON()`, a data frame); a URL
+#'   (`mapgl::carto_style("positron")`, ...) is fetched once per session
+#'   (needs `jsonlite`; 10 s timeout). When the style cannot be read —
+#'   offline, a `mapbox://` URL, `mapgl::mapboxgl()`'s default style, a list
+#'   without `layers`, no `jsonlite` — and no layer added to `map` answers,
+#'   a warning says so and the layers go on top. A style without `symbol`
+#'   layers puts them on top too.
+#' * any other string: the id of a layer to insert before — of the style
+#'   or one already added to `map`. When the style can be read and has no
+#'   such layer, a warning says so and the layers go on top (MapLibre would
+#'   otherwise drop them). When it cannot be read, the id is used as given,
+#'   with a warning that it could not be checked.
 #'
 #' The source is the engine's GeoJSON text, handed to the widget verbatim.
 #' (`mapgl::add_source()` takes only an `sf` object, which it re-serialises
@@ -77,6 +118,8 @@ rpic_maplibre_layers <- function(x, ...) {
 #' @param map a map from [mapgl::maplibre()] or [mapgl::mapboxgl()] (Shiny
 #'   proxies are not supported).
 #' @inheritParams rpic_maplibre_layers
+#' @param before where the geometry layers go: `NULL` (on top), `"labels"`
+#'   (under the basemap's labels) or a layer id; see Details.
 #' @param fit zoom the map to the drawing's bounding box.
 #' @return `map`, with the source and the layers added (pipe-friendly).
 #' @section Requirements:
@@ -90,9 +133,19 @@ rpic_maplibre_layers <- function(x, ...) {
 #'   "Recife" at (0, 0)'
 #'   m <- rpic_mapgl(mapgl::maplibre(style = mapgl::carto_style("positron")), src)
 #'   vapply(m$x$layers, function(l) l$id, "")
+#'
+#'   # shapes under the basemap's labels, larger labels; a style given as a
+#'   # list is read without a download
+#'   style <- list(version = 8, sources = list(), layers = list(
+#'     list(id = "water", type = "fill"),
+#'     list(id = "place-names", type = "symbol")
+#'   ))
+#'   m <- rpic_mapgl(mapgl::maplibre(style = style), src,
+#'                   before = "labels", text_scale = 1.5)
+#'   vapply(m$x$layers, function(l) if (is.null(l$before_id)) NA_character_ else l$before_id, "")
 #' }
 #' @export
-rpic_mapgl <- function(map, x, ..., fit = TRUE) {
+rpic_mapgl <- function(map, x, ..., before = NULL, text_scale = 1, fit = TRUE) {
   if (!.has_mapgl()) {
     stop("rpic_mapgl() needs the 'mapgl' package: install.packages(\"mapgl\")", call. = FALSE)
   }
@@ -103,8 +156,13 @@ rpic_mapgl <- function(map, x, ..., fit = TRUE) {
   if (!inherits(map, c("maplibregl", "mapboxgl"))) {
     stop("`map` must be a map from mapgl::maplibre() or mapgl::mapboxgl()", call. = FALSE)
   }
+  if (!is.null(before) && (!is.character(before) || length(before) != 1 ||
+                            is.na(before) || !nzchar(before))) {
+    stop("`before` must be NULL, \"labels\" or a layer id (a single string)", call. = FALSE)
+  }
+  opts <- .layer_options(text_scale, sys.call())
   gj <- .geo_text(x, ..., call = sys.call())
-  layers <- .maplibre_layers(gj, sys.call())
+  layers <- .maplibre_layers(gj, opts, sys.call())
   source <- layers[[1]]$source
   # a map holds one pic drawing: a second "pic" source or duplicate layer ids
   # make mapgl's JavaScript throw at init (a blank map, no R error)
@@ -125,9 +183,14 @@ rpic_mapgl <- function(map, x, ..., fit = TRUE) {
   map$x$sources <- c(map$x$sources, list(list(
     id = source, type = "geojson", data = data, generateId = TRUE
   )))
+  # resolved before our layers join map$x$layers (so they are never a target)
+  below <- .before_id(map, before)
   for (l in layers) {
+    # the drawing's own labels always go on top (the JS attach() rule)
+    b <- if (l$id %in% .pic_text_layers) NULL else below
     map <- mapgl::add_layer(map, id = l$id, type = l$type, source = l$source,
-                            paint = l$paint, layout = l$layout, filter = l$filter)
+                            paint = l$paint, layout = l$layout, filter = l$filter,
+                            before_id = b)
   }
   if (isTRUE(fit)) {
     bbox <- rpic_geojson_bbox_(as.character(gj))
@@ -205,13 +268,162 @@ rpic_mapgl <- function(map, x, ..., fit = TRUE) {
   ), call. = FALSE)
 }
 
-.maplibre_layers <- function(gj, call) {
-  res <- rpic_maplibre_layers_(as.character(gj))
-  if (!is.null(res$error)) {
-    stop(structure(
-      class = c("rpic_geo_error", "rpic_error", "error", "condition"),
-      list(message = res$error, call = call, info = res$info)
+# The engine's layer options as JSON text (`{"text_scale": k}`), validated by
+# the engine (`LayerOptions::from_json`); R only checks it can write a JSON
+# number.
+.layer_options <- function(text_scale, call) {
+  if (!is.numeric(text_scale) || length(text_scale) != 1 || is.na(text_scale) ||
+      !is.finite(text_scale)) {
+    shown <- if (is.numeric(text_scale) && length(text_scale) == 1) {
+      format(text_scale)
+    } else {
+      paste0("a ", class(text_scale)[1], " of length ", length(text_scale))
+    }
+    stop(.geo_condition(
+      "invalid_options",
+      sprintf("text_scale must be a finite number in (0, 16], got %s", shown),
+      call = call
     ))
+  }
+  sprintf('{"text_scale": %s}', sprintf("%.17g", as.double(text_scale)))
+}
+
+# An `rpic_geo_error` condition shaped like the shim's geo errors: `info`
+# holds `kind`, `message`, `hint`; the message is the engine's GeoError
+# display, `<message> (<kind>)` and ` — <hint>` when there is one.
+.geo_condition <- function(kind, message, hint = NA_character_, call = NULL) {
+  text <- sprintf("%s (%s)", message, kind)
+  if (length(hint) == 1 && !is.na(hint)) text <- paste0(text, " \u2014 ", hint)
+  structure(
+    class = c("rpic_geo_error", "rpic_error", "error", "condition"),
+    list(message = text, call = call,
+         info = list(kind = kind, message = message, hint = hint))
+  )
+}
+
+.maplibre_layers <- function(gj, opts, call) {
+  res <- rpic_maplibre_layers_(as.character(gj), opts)
+  if (!is.null(res$error)) {
+    stop(.geo_condition(res$info$kind, res$info$message, res$info$hint, call))
   }
   res$value
 }
+
+# The drawing's label layers: `before` never buries them (JS TEXT_LAYER_IDS).
+.pic_text_layers <- c("pic-text", "pic-title")
+
+# The layer id the geometry layers go before (NULL = on top), the rule of the
+# engine's JS `attach()`: "labels" = a layer whose id is `labels`, else the
+# first `symbol` layer with an id; any other string = that layer, checked
+# when the style can be read. The candidates are the style's layers, then the
+# layers already added to the map (both precede ours at load); the added ones
+# are consulted even when the style cannot be read.
+.before_id <- function(map, before) {
+  if (is.null(before)) return(NULL)
+  added <- .layer_table(map$x$layers)
+  # the style is read only when the added layers do not settle it
+  if (before == "labels" && "labels" %in% added$id) return("labels")
+  if (before != "labels" && before %in% added$id) return(before)
+  style <- .style_layers(map$x$style)
+  if (!is.null(style$error)) {
+    if (before == "labels") {
+      first <- added$id[added$type %in% "symbol"]
+      if (length(first)) return(first[1])
+      warning(sprintf(
+        "rpic_mapgl(): could not read the map's style to find its labels (%s); the pic layers go on top",
+        style$error), call. = FALSE)
+      return(NULL)
+    }
+    # cannot check: trust the id, but say so (MapLibre drops the geometry
+    # layers at runtime when the map has no such layer)
+    warning(sprintf(paste0(
+      "rpic_mapgl(): could not read the map's style to check that it has a layer \"%s\" ",
+      "(%s); using it as given; if the map has no such layer, MapLibre drops the pic ",
+      "geometry layers"), before, style$error), call. = FALSE)
+    return(before)
+  }
+  all <- .layer_table(c(style$layers, map$x$layers))
+  if (before == "labels") {
+    if ("labels" %in% all$id) return("labels")
+    first <- all$id[all$type %in% "symbol"]
+    return(if (length(first)) first[1] else NULL)
+  }
+  if (before %in% all$id) return(before)
+  warning(sprintf(
+    "rpic_mapgl(): the map's style has no layer \"%s\"; the pic layers go on top", before
+  ), call. = FALSE)
+  NULL
+}
+
+# Layers as a table of `id` and `type`, without the layers that have no id
+# (never a `before_id`).
+.layer_table <- function(layers) {
+  str1 <- function(v) {
+    v <- if (is.null(v) || !length(v)) NA_character_ else as.character(v[[1]])
+    if (!length(v) || is.na(v) || !nzchar(v)) NA_character_ else v
+  }
+  id <- vapply(layers, function(l) if (is.list(l)) str1(l$id) else NA_character_, "")
+  type <- vapply(layers, function(l) if (is.list(l)) str1(l$type) else NA_character_, "")
+  keep <- !is.na(id)
+  list(id = unname(id[keep]), type = unname(type[keep]))
+}
+
+# The style's layers: list(layers =) or list(error =). A list style is read as
+# is — also one parsed by `jsonlite::fromJSON()` with its default
+# simplification, whose `layers` is a data frame; an http(s) URL is fetched
+# (`.fetch_style()`, memoised, mocked in the tests).
+.style_layers <- function(style) {
+  if (is.null(style)) {
+    return(list(error = "the map's default style cannot be read here"))
+  }
+  if (is.list(style)) return(.style_list_layers(style))
+  if (!is.character(style) || length(style) != 1 || is.na(style)) {
+    return(list(error = "the style is neither a list nor a URL"))
+  }
+  if (!grepl("^https?://", style)) {
+    return(list(error = sprintf("cannot download a style from \"%s\"", style)))
+  }
+  if (!requireNamespace("jsonlite", quietly = TRUE)) {
+    return(list(error = "reading a style URL needs the 'jsonlite' package"))
+  }
+  tryCatch(
+    .style_list_layers(.fetch_style_cached(style)),
+    error = function(e) list(error = conditionMessage(e))
+  )
+}
+
+.style_list_layers <- function(js) {
+  layers <- if (is.list(js)) js$layers
+  if (is.data.frame(layers)) {
+    # fromJSON(simplifyVector = TRUE): one row per layer; only `id` and
+    # `type` are read
+    col <- function(k) if (k %in% names(layers)) as.character(layers[[k]]) else
+      rep(NA_character_, nrow(layers))
+    id <- col("id")
+    type <- col("type")
+    layers <- lapply(seq_len(nrow(layers)), function(i) list(id = id[i], type = type[i]))
+  }
+  if (!is.list(layers)) return(list(error = "the style has no `layers` array"))
+  list(layers = layers)
+}
+
+# One download per style URL per session: several maps in a document share it.
+.style_cache <- new.env(parent = emptyenv())
+
+.fetch_style_cached <- function(url) {
+  if (!exists(url, envir = .style_cache, inherits = FALSE)) {
+    assign(url, .fetch_style(url), envir = .style_cache)
+  }
+  get(url, envir = .style_cache, inherits = FALSE)
+}
+
+.fetch_style <- function(url, timeout = 10) {
+  old <- options(timeout = timeout)
+  on.exit(options(old), add = TRUE)
+  con <- url(url, open = "rb")
+  on.exit(close(con), add = TRUE)
+  jsonlite::fromJSON(paste(readLines(con, warn = FALSE, encoding = "UTF-8"), collapse = "\n"),
+                     simplifyVector = FALSE)
+}
+
+`%||%` <- function(a, b) if (is.null(a)) b else a

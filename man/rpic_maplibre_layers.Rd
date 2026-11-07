@@ -4,7 +4,7 @@
 \alias{rpic_maplibre_layers}
 \title{MapLibre layers that draw a georeferenced pic drawing}
 \usage{
-rpic_maplibre_layers(x, ...)
+rpic_maplibre_layers(x, ..., text_scale = 1)
 }
 \arguments{
 \item{x}{the drawing: the result of \code{\link[=rpic_geojson]{rpic_geojson()}} (or any GeoJSON
@@ -18,6 +18,15 @@ edited columns are not seen), or pic source code, which is
 georeferenced with \code{rpic_geojson(x, ...)}.}
 
 \item{...}{arguments passed to \code{\link[=rpic_geojson]{rpic_geojson()}} when \code{x} is pic source.}
+
+\item{text_scale}{multiplies every label's font size (\code{pic-text} and
+\code{pic-title}): a finite number in (0, 16]. The default, 1, keeps the
+labels true to the ground; 1.5 draws them half as large again, so they
+stay legible further out. Strokes and dots keep their ground sizes. The
+scale is applied inside the engine's sizing (\code{LayerOptions}, the
+engine's DECISIONS G11), so the upper \code{text-size} zoom stop still keeps
+labels within MapLibre's 255 px limit — the same output as
+\code{rpic --geojson --maplibre --text-scale}.}
 }
 \value{
 a list of six layer specs, each a named list with \code{id}, \code{type},
@@ -52,7 +61,8 @@ engine's GeoJSON, not a re-serialised \code{sf} data frame (whose columns are
 \section{Errors}{
 
 A JSON text that is not a FeatureCollection raises an \code{rpic_geo_error}
-with \code{e$info$kind == "invalid_geojson"}.
+with \code{e$info$kind == "invalid_geojson"}; a \code{text_scale} that is not a
+single number in (0, 16] one with \code{e$info$kind == "invalid_options"}.
 }
 
 \examples{
@@ -62,6 +72,11 @@ circle rad 2 at (0, 0)
 "Recife" at (0, 0)')
 vapply(layers, function(l) l$id, "")
 layers[[2]]$paint$`line-width`[1:3]   # "interpolate", exponential 2, zoom
+
+# larger labels: the text-size factor of pic-text grows by 1.5
+big <- rpic_maplibre_layers('geo_lon = -34.8711; geo_lat = -8.0631
+geo_scale = 1000
+"Recife" at (0, 0)', text_scale = 1.5)
 }
 \seealso{
 \code{\link[=rpic_mapgl]{rpic_mapgl()}}; the article

@@ -50,7 +50,7 @@ futures-core                 0.3.34     MIT OR Apache-2.0          (not stated)
 futures-task                 0.3.34     MIT OR Apache-2.0          (not stated)
 futures-util                 0.3.34     MIT OR Apache-2.0          (not stated)
 geographiclib-rs             0.2.7      MIT                        (not stated)
-geopic-core                  0.15.1     BSD-2-Clause               André Leite <leite@de.ufpe.br>
+geopic-core                  0.16.0     BSD-2-Clause               André Leite <leite@de.ufpe.br>
 gif                          0.13.3     MIT OR Apache-2.0          The image-rs Developers
 gif                          0.14.2     MIT OR Apache-2.0          The image-rs Developers
 harfrust                     0.12.0     MIT                        (not stated)
@@ -117,8 +117,8 @@ resvg                        0.49.0     Apache-2.0 OR MIT          (not stated)
 rgb                          0.8.53     MIT                        Kornel Lesiński <kornel@geekhood.net>; James Forster <james.forsterer@gmail.com>
 roxmltree                    0.20.0     MIT OR Apache-2.0          Yevhenii Reizner <razrfalcon@gmail.com>
 roxmltree                    0.21.2     MIT OR Apache-2.0          Yevhenii Reizner <razrfalcon@gmail.com>
-rpic-core                    0.15.1     BSD-2-Clause               André Leite <leite@de.ufpe.br>
-rpic-render                  0.15.1     BSD-2-Clause               André Leite <leite@de.ufpe.br>
+rpic-core                    0.16.0     BSD-2-Clause               André Leite <leite@de.ufpe.br>
+rpic-render                  0.16.0     BSD-2-Clause               André Leite <leite@de.ufpe.br>
 rust-embed                   8.13.0     MIT                        pyrossh
 rust-embed-impl              8.13.0     MIT                        pyrossh
 rust-embed-utils             8.13.0     MIT                        pyrossh

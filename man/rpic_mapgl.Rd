@@ -4,7 +4,7 @@
 \alias{rpic_mapgl}
 \title{Draw a pic drawing on a mapgl map}
 \usage{
-rpic_mapgl(map, x, ..., fit = TRUE)
+rpic_mapgl(map, x, ..., before = NULL, text_scale = 1, fit = TRUE)
 }
 \arguments{
 \item{map}{a map from \code{\link[mapgl:maplibre]{mapgl::maplibre()}} or \code{\link[mapgl:mapboxgl]{mapgl::mapboxgl()}} (Shiny
@@ -22,6 +22,18 @@ georeferenced with \code{rpic_geojson(x, ...)}.}
 
 \item{...}{arguments passed to \code{\link[=rpic_geojson]{rpic_geojson()}} when \code{x} is pic source.}
 
+\item{before}{where the geometry layers go: \code{NULL} (on top), \code{"labels"}
+(under the basemap's labels) or a layer id; see Details.}
+
+\item{text_scale}{multiplies every label's font size (\code{pic-text} and
+\code{pic-title}): a finite number in (0, 16]. The default, 1, keeps the
+labels true to the ground; 1.5 draws them half as large again, so they
+stay legible further out. Strokes and dots keep their ground sizes. The
+scale is applied inside the engine's sizing (\code{LayerOptions}, the
+engine's DECISIONS G11), so the upper \code{text-size} zoom stop still keeps
+labels within MapLibre's 255 px limit — the same output as
+\code{rpic --geojson --maplibre --text-scale}.}
+
 \item{fit}{zoom the map to the drawing's bounding box.}
 }
 \value{
@@ -36,6 +48,33 @@ holding the engine's FeatureCollection, the six layers of
 at most — the fit of the engine's JavaScript \code{attach()}).
 }
 \details{
+\code{before} decides where the drawing goes among the style's layers, by the
+rule of the engine's JavaScript \code{attach(map, fc, { before })}: only the
+geometry layers (\code{pic-fill}, \code{pic-stroke}, \code{pic-stroke-dashed},
+\code{pic-dot}) are inserted before the chosen layer; the drawing's own
+labels (\code{pic-text}, \code{pic-title}) are always added on top, so a basemap
+label never covers them.
+\itemize{
+\item \code{NULL} (the default): all six layers on top of the style.
+\item \code{"labels"}: under the basemap's labels — before the style's layer with
+the id \code{labels} if it has one, else before its first \code{symbol} layer
+(place names, road labels), among the style's layers and those already
+added to \code{map}. The style is read from \code{map$x$style}: a list is
+inspected as is (\code{layers} as a list of layers or, from
+\code{jsonlite::fromJSON()}, a data frame); a URL
+(\code{mapgl::carto_style("positron")}, ...) is fetched once per session
+(needs \code{jsonlite}; 10 s timeout). When the style cannot be read —
+offline, a \verb{mapbox://} URL, \code{mapgl::mapboxgl()}'s default style, a list
+without \code{layers}, no \code{jsonlite} — and no layer added to \code{map} answers,
+a warning says so and the layers go on top. A style without \code{symbol}
+layers puts them on top too.
+\item any other string: the id of a layer to insert before — of the style
+or one already added to \code{map}. When the style can be read and has no
+such layer, a warning says so and the layers go on top (MapLibre would
+otherwise drop them). When it cannot be read, the id is used as given,
+with a warning that it could not be checked.
+}
+
 The source is the engine's GeoJSON text, handed to the widget verbatim.
 (\code{mapgl::add_source()} takes only an \code{sf} object, which it re-serialises
 with the \code{sf} column names — \code{geopic.kind} instead of the \code{geopic:kind}
@@ -56,6 +95,16 @@ if (requireNamespace("mapgl", quietly = TRUE)) {
   "Recife" at (0, 0)'
   m <- rpic_mapgl(mapgl::maplibre(style = mapgl::carto_style("positron")), src)
   vapply(m$x$layers, function(l) l$id, "")
+
+  # shapes under the basemap's labels, larger labels; a style given as a
+  # list is read without a download
+  style <- list(version = 8, sources = list(), layers = list(
+    list(id = "water", type = "fill"),
+    list(id = "place-names", type = "symbol")
+  ))
+  m <- rpic_mapgl(mapgl::maplibre(style = style), src,
+                  before = "labels", text_scale = 1.5)
+  vapply(m$x$layers, function(l) if (is.null(l$before_id)) NA_character_ else l$before_id, "")
 }
 }
 \seealso{
