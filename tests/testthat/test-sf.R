@@ -4,19 +4,20 @@ test_that("B4: rpic_sf is EPSG:4326 with the documented columns", {
   x <- rpic_sf(src)
   expect_s3_class(x, "sf")
   expect_equal(sf::st_crs(x)$epsg, 4326L)
-  expect_true(all(c("stroke", "stroke-width", "fill", "geopic.id", "geopic.kind",
-                    "geopic.placement", "geopic.schema") %in% names(x)))
-  expect_false(any(grepl(":", names(x))))
+  expect_true(all(c("stroke", "stroke_width", "fill", "geopic_id", "geopic_kind",
+                    "geopic_placement", "geopic_schema") %in% names(x)))
+  expect_false(any(grepl("[:.-]", names(x))))
+  expect_identical(names(x), make.names(names(x)))
   expect_identical(attr(x, "sf_column"), "geometry")
   # engine 0.15.1: a shape with text gains a `title` point feature
-  expect_identical(x$geopic.kind, c("dot", "box", "title", "arrow", "arrowhead"))
-  t <- x[x$geopic.kind == "title", ]
-  expect_identical(t$geopic.for, "s1")
-  expect_identical(t$geopic.id, "s1:title")
+  expect_identical(x$geopic_kind, c("dot", "box", "title", "arrow", "arrowhead"))
+  t <- x[x$geopic_kind == "title", ]
+  expect_identical(t$geopic_for, "s1")
+  expect_identical(t$geopic_id, "s1:title")
   expect_identical(t$title, "Marco Zero\nRecife")
   expect_identical(as.character(sf::st_geometry_type(t)), "POINT")
   # arrowheads no longer carry the shape's text
-  expect_true(is.na(x$title[x$geopic.kind == "arrowhead"]))
+  expect_true(is.na(x$title[x$geopic_kind == "arrowhead"]))
   expect_identical(attr(x, "registration")$method, "anchor")
 })
 
@@ -35,18 +36,18 @@ test_that("B4: sf features are placed at their centroids, with their extent", {
   x <- rpic_sf("line from West to East\nbox at West.n wid 0.1 ht 0.1",
                features = polys)
   expect_identical(attr(x, "registration")$method, "two_points")
-  line <- sf::st_coordinates(sf::st_geometry(x)[x$geopic.kind == "line"][[1]])
+  line <- sf::st_coordinates(sf::st_geometry(x)[x$geopic_kind == "line"][[1]])
   expect_equal(unname(line[1, 1:2]), unname(cent[1, ]), tolerance = 1e-7)
   expect_equal(unname(line[nrow(line), 1:2]), unname(cent[2, ]), tolerance = 1e-7)
   # West.n is the top of the injected invisible box spanning the polygon
-  box <- sf::st_coordinates(sf::st_centroid(sf::st_geometry(x)[x$geopic.kind == "box"][[1]]))
+  box <- sf::st_coordinates(sf::st_centroid(sf::st_geometry(x)[x$geopic_kind == "box"][[1]]))
   expect_equal(unname(box[1, "Y"]), -8.08, tolerance = 1e-4)
 
   # name_col and a projected CRS
   names(polys)[1] <- "county"
   utm <- sf::st_transform(polys, 32725)
   y <- rpic_sf("line from West to East", features = utm, name_col = "county")
-  line <- sf::st_coordinates(sf::st_geometry(y)[y$geopic.kind == "line"][[1]])
+  line <- sf::st_coordinates(sf::st_geometry(y)[y$geopic_kind == "line"][[1]])
   expect_equal(unname(line[1, 1:2]), unname(cent[1, ]), tolerance = 1e-5)
   expect_error(rpic_sf("box", features = utm), "name_col")
 })

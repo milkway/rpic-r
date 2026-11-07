@@ -23,7 +23,8 @@
 #' properties are the simplestyle keys (`stroke`, `stroke-width`, `fill`,
 #' `stroke-opacity`, `fill-opacity`, `title`) and the `geopic:` namespace
 #' (`geopic:id`, `geopic:kind`, `geopic:text`, `geopic:placement`, ...);
-#' the full vocabulary is in the engine's `docs/geopic.md`.
+#' the full vocabulary is in the engine's `docs/geopic.md` (and, with the
+#' column names [rpic_sf()] gives them, in [rpic_sf_names()]).
 #'
 #' @section Features:
 #' `features` names places the source may use without defining them
@@ -88,10 +89,11 @@
 #'   as the foreign member `geopic`.
 #' @seealso [rpic_sf()] for an `sf` data frame; `vignette("maps")`.
 #' @examples
-#' gj <- rpic_geojson('geo_lon = -34.8711; geo_lat = -8.0631
+#' gj <- pic('geo_lon = -34.8711; geo_lat = -8.0631
 #' geo_scale = 1000     # one inch is one kilometre
 #' circle rad 2 at (0, 0)
-#' "Recife" at (0, 0)')
+#' "Recife" at (0, 0)') |>
+#'   rpic_geojson()
 #' attr(gj, "registration")$method   # "anchor"
 #' substr(gj, 1, 60)
 #'
@@ -105,11 +107,12 @@
 #' @export
 rpic_geojson <- function(src, frame = c("enu", "mercator"), anchor = NULL, scale = NULL,
                          bearing = NULL, features = NULL, flatten = 1e-3, view_scale = NULL,
-                         circuits = FALSE, texlabels = FALSE, name_col = "name") {
+                         circuits = NULL, texlabels = NULL, name_col = "name") {
+  a <- .src(src, circuits, texlabels)
   frame <- if (missing(frame)) NULL else match.arg(frame)
   feats <- .geo_features(features, name_col)
   opts <- .geo_options_json(frame, anchor, scale, bearing, feats, flatten, view_scale)
-  res <- rpic_geojson_(src, isTRUE(circuits), isTRUE(texlabels), opts)
+  res <- rpic_geojson_(a$src, a$circuits, a$texlabels, opts)
   if (!is.null(res$error)) {
     cls <- if (isTRUE(res$geo)) c("rpic_geo_error", "rpic_error") else "rpic_error"
     stop(structure(
@@ -132,43 +135,46 @@ rpic_geojson <- function(src, frame = c("enu", "mercator"), anchor = NULL, scale
 #' feature, ready for [ggplot2::geom_sf()], `mapgl` or any other `sf`
 #' consumer.
 #'
-#' Columns are the feature properties. The simplestyle keys keep their names
-#' (`stroke`, `stroke-width`, `fill`, `stroke-opacity`, `fill-opacity`,
-#' `title`; use backticks for the hyphenated ones), and every `geopic:<name>`
-#' property becomes `geopic.<name>` (`geopic.id`, `geopic.kind`,
-#' `geopic.text`, `geopic.placement`, `geopic.font_size`, ...) — the colon
-#' is awkward in R column names. A property no feature carries is absent;
-#' one only some features carry is `NA` elsewhere. The geometry column is
-#' `geometry`, of mixed type (polygons for boxes and circles, line strings
-#' for lines and arrows, points for dots and text).
+#' Columns are the feature properties, in snake_case: every `:` and `-` of
+#' a GeoJSON property name becomes `_` ([rpic_sf_names()]) — `stroke`,
+#' `stroke_width`, `fill`, `stroke_opacity`, `fill_opacity`, `title`, and
+#' `geopic_id`, `geopic_kind`, `geopic_text`, `geopic_placement`,
+#' `geopic_font_size`, ... for the `geopic:` namespace — so every column is a
+#' syntactic name (`x$geopic_kind`, `aes(fill = fill)`, `dplyr::filter()`).
+#' A property no feature carries is absent; one only some features carry is
+#' `NA` elsewhere. The geometry column is `geometry`, of mixed type
+#' (polygons for boxes and circles, line strings for lines and arrows,
+#' points for dots and text).
 #'
 #' A shape with text (`box "Marco Zero"`) is followed by a `title` row: a
-#' point at the centre of its text, `geopic.kind == "title"`, `geopic.id`
-#' `"<id>:title"` and `geopic.for` naming the shape's `geopic.id`, carrying
-#' the text in `title` and `geopic.text` (engine 0.15.1; MapLibre's
+#' point at the centre of its text, `geopic_kind == "title"`, `geopic_id`
+#' `"<id>:title"` and `geopic_for` naming the shape's `geopic_id`, carrying
+#' the text in `title` and `geopic_text` (engine 0.15.1; MapLibre's
 #' `pic-title` layer draws these). Filter them out
-#' (`x[x$geopic.kind != "title", ]`) to keep one row per shape.
+#' (`x[x$geopic_kind != "title", ]`) to keep one row per shape.
 #'
 #' The `"warnings"` and `"registration"` attributes of [rpic_geojson()] are
 #' carried over (as attributes of the data frame; `sf` operations may drop
 #' them), and warnings are raised the same way. The `"geojson"` attribute
 #' keeps the engine's own GeoJSON text (the [rpic_geojson()] result the data
-#' frame was read from), which [rpic_maplibre_layers()] and [rpic_mapgl()]
+#' frame was read from), which [rpic_maplibre_layers()] and [add_rpic()]
 #' use instead of re-serialising the data frame.
-#' @param src pic source code.
+#' @param src pic source code: a [pic()] object or a single string.
 #' @param ... arguments passed to [rpic_geojson()] (`frame`, `anchor`,
 #'   `scale`, `bearing`, `features`, `flatten`, `view_scale`, `circuits`,
 #'   `texlabels`, `name_col`).
 #' @return an `sf` data frame with CRS EPSG:4326.
 #' @section Requirements:
 #' Needs the `sf` package: `install.packages("sf")`.
-#' @seealso `vignette("maps")`.
+#' @seealso [rpic_sf_names()] for the column names; [autoplot.rpic_source()]
+#'   for a quick `ggplot2` map; `vignette("maps")`.
 #' @examples
 #' if (requireNamespace("sf", quietly = TRUE)) {
-#'   x <- rpic_sf('geo_lon = -34.8711; geo_lat = -8.0631; geo_scale = 400
+#'   x <- pic('geo_lon = -34.8711; geo_lat = -8.0631; geo_scale = 400
 #'   B: box "Marco Zero" at (1, 1) fill 0.95
-#'   arrow from B.sw to (0, 0)')
-#'   x[, c("geopic.kind", "fill")]
+#'   arrow from B.sw to (0, 0)') |>
+#'     rpic_sf()
+#'   x[, c("geopic_kind", "fill", "stroke_width")]
 #' }
 #' @export
 rpic_sf <- function(src, ...) {
@@ -178,13 +184,11 @@ rpic_sf <- function(src, ...) {
   gj <- rpic_geojson(src, ...)
   x <- sf::st_read(as.character(gj), quiet = TRUE, stringsAsFactors = FALSE)
   # sf's reader makes the names syntactic ("stroke-width" -> "stroke.width",
-  # "geopic:kind" -> "geopic.kind"); put the simplestyle names back. Rebuild
-  # the sf object after renaming so its `agr` attribute follows the new names.
-  nm <- names(x)
-  simplestyle <- c("stroke-width", "stroke-opacity", "fill-opacity",
-                   "marker-size", "marker-symbol", "marker-color")
-  hit <- match(nm, make.names(simplestyle))
-  nm[!is.na(hit)] <- simplestyle[hit[!is.na(hit)]]
+  # "geopic:kind" -> "geopic.kind"); no property name of the vocabulary has
+  # a dot, so a dot was a `:` or `-`: snake_case it, as rpic_sf_names() does
+  # with the GeoJSON names. Rebuild the sf object after renaming so its `agr`
+  # attribute follows the new names.
+  nm <- gsub(".", "_", names(x), fixed = TRUE)
   geom_col <- attr(x, "sf_column")
   x <- sf::st_as_sf(stats::setNames(as.data.frame(x), nm), sf_column_name = nm[match(geom_col, names(x))])
   if (attr(x, "sf_column") != "geometry") {
@@ -193,10 +197,40 @@ rpic_sf <- function(src, ...) {
   x <- sf::st_set_crs(x, 4326)
   attr(x, "warnings") <- attr(gj, "warnings")
   attr(x, "registration") <- attr(gj, "registration")
-  # the engine's own text, for rpic_maplibre_layers()/rpic_mapgl(); the row
+  # the engine's own text, for rpic_maplibre_layers()/add_rpic(); the row
   # count lets them notice an sf that lost rows since
   attr(x, "geojson") <- structure(gj, n_features = nrow(x))
   x
+}
+
+#' Column names of rpic_sf() for GeoJSON property names
+#'
+#' The one rule [rpic_sf()] names its columns by: every `:` and `-` of a
+#' GeoJSON property name becomes `_`, so all columns are syntactic R names
+#' in snake_case. Use it to translate the engine's vocabulary (its
+#' `docs/geopic.md`, the MapLibre layers' expressions) to columns.
+#'
+#' | GeoJSON property | `rpic_sf()` column |
+#' |---|---|
+#' | `stroke`, `fill`, `title` | `stroke`, `fill`, `title` |
+#' | `stroke-width`, `stroke-opacity`, `fill-opacity` | `stroke_width`, `stroke_opacity`, `fill_opacity` |
+#' | `geopic:schema`, `geopic:id`, `geopic:kind`, `geopic:z` | `geopic_schema`, `geopic_id`, `geopic_kind`, `geopic_z` |
+#' | `geopic:label`, `geopic:block`, `geopic:class`, `geopic:link` | `geopic_label`, `geopic_block`, `geopic_class`, `geopic_link` |
+#' | `geopic:text`, `geopic:rotation`, `geopic:anchor`, `geopic:font_size` | `geopic_text`, `geopic_rotation`, `geopic_anchor`, `geopic_font_size` |
+#' | `geopic:dash`, `geopic:hatch`, `geopic:placement`, `geopic:for` | `geopic_dash`, `geopic_hatch`, `geopic_placement`, `geopic_for` |
+#' | `geopic:head`, `geopic:filled`, `geopic:part`, `geopic:role`, `geopic:radius_in` | `geopic_head`, `geopic_filled`, `geopic_part`, `geopic_role`, `geopic_radius_in` |
+#'
+#' The GeoJSON text itself ([rpic_geojson()], the `"geojson"` attribute of
+#' an [rpic_sf()] result) keeps the engine's names; the MapLibre layers read
+#' those.
+#' @param x GeoJSON property names (a character vector).
+#' @return the column names, a character vector as long as `x`.
+#' @examples
+#' rpic_sf_names(c("geopic:kind", "stroke-width", "fill-opacity", "title"))
+#' @export
+rpic_sf_names <- function(x) {
+  if (!is.character(x)) stop("`x` must be a character vector", call. = FALSE)
+  gsub("[:-]", "_", x)
 }
 
 # Is sf available? (a function so tests can exercise the sf-less paths)
