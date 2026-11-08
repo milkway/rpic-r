@@ -38,6 +38,7 @@ reference:
       - rpic_geojson
       - rpic_sf
       - rpic_sf_names
+      - rpic_layers
       - autoplot.rpic_source
       - rpic_maplibre_layers
       - add_rpic

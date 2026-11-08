@@ -145,30 +145,16 @@ if (requireNamespace("sf", quietly = TRUE) && requireNamespace("ggplot2", quietl
   }
   # every pic colour is already a hex string: identity scales draw the
   # drawing as drawn; text features are labels, not markers
-  # the same helper the vignette prints: anchors -> hjust/vjust, rotation ->
-  # angle, and the lon/lat grid so the Earth is visible
+  # rpic_layers() + the lon/lat grid, as the vignette shows
   pic_layers <- function(x, x_breaks = NULL) {
-    # text and shape titles (engine 0.15.1: a point at the text's centre)
-    shapes <- x[!x$geopic_kind %in% c("text", "title"), ]
-    labels <- x[x$geopic_kind %in% c("text", "title"), ]
-    a <- ifelse(is.na(labels$geopic_anchor), "c", labels$geopic_anchor)
-    labels$hjust <- ifelse(grepl("e", a), 1, ifelse(grepl("w", a), 0, 0.5))
-    labels$vjust <- ifelse(grepl("n", a), 1, ifelse(grepl("s", a), 0, 0.5))
-    labels$angle <- ifelse(is.na(labels$geopic_rotation), 0, labels$geopic_rotation)
-    list(
-      geom_sf(data = shapes, aes(fill = fill, colour = stroke), linewidth = 0.4),
-      geom_sf_text(data = labels,
-                   aes(label = geopic_text, hjust = hjust, vjust = vjust, angle = angle),
-                   size = 3, fun.geometry = function(g) g),
-      scale_fill_identity(), scale_colour_identity(),
-      coord_sf(clip = "off"),
+    c(rpic_layers(x), list(
       if (is.null(x_breaks)) scale_x_continuous(n.breaks = 4) else scale_x_continuous(breaks = x_breaks),
       labs(x = NULL, y = NULL),
       theme_minimal(base_size = 8),
       theme(panel.grid = element_line(colour = "grey88", linewidth = 0.25),
             axis.text = element_text(colour = "grey45"),
             plot.margin = margin(8, 16, 8, 16))
-    )
+    ))
   }
   save_map <- function(name, p, width = 5, height = 3.6) {
     path <- file.path(fig_dir, paste0(name, ".png"))

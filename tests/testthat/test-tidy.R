@@ -273,3 +273,30 @@ box wid 1 ht 0.5 at (0.5, -0.5)
   # the drawing's bearing turns the texts the other way (counter-clockwise from east)
   expect_equal(unique(labels$angle), -30)
 })
+
+test_that("rpic_layers() is a list of ggplot2 layers that draws an rpic_sf()", {
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("sf")
+  src <- 'geo_lon = 0; geo_lat = 0; geo_scale = 1000
+B: box "a" fill 0.9 thick 2
+"b" above at (1, 1)'
+  x <- pic(src) |> rpic_sf()
+  layers <- rpic_layers(x)
+  expect_type(layers, "list")
+  g <- ggplot2::ggplot() + layers
+  expect_s3_class(g, "ggplot")
+  expect_length(g$layers, 2)           # shapes, labels
+  expect_no_warning(b <- ggplot2::ggplot_build(g))
+  labels <- ggplot2::layer_data(g, 2)
+  expect_setequal(labels$label, c("a", "b"))
+  expect_equal(labels$vjust[labels$label == "b"], 0)   # above -> point at the bottom
+  # the same from pic source, with its georeferencing arguments
+  g2 <- ggplot2::ggplot() + rpic_layers(pic(sub("geo_scale = 1000", "", src)), scale = 1000)
+  expect_equal(nrow(ggplot2::layer_data(g2, 1)), nrow(ggplot2::layer_data(g, 1)))
+  # pic's own widths: `thick 2` is 2 pt -> mm
+  g3 <- ggplot2::ggplot() + rpic_layers(x, linewidth = NULL)
+  expect_equal(ggplot2::layer_data(g3, 1)$linewidth, 2 * 25.4 / 72.27)
+  expect_error(rpic_layers(x, scale = 2), "apply only when")
+  expect_error(rpic_layers(x, linewidth = -1), "linewidth")
+  expect_error(rpic_layers(sf::st_sf(geometry = sf::st_sfc())), "geopic_kind")
+})

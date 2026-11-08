@@ -41,10 +41,15 @@ object for the source, pipe-first verbs, snake_case columns, data frames.
   mapgl adder, map first like mapgl's own `add_*()` verbs:
   `maplibre() |> add_rpic(pic(src))`. `rpic_mapgl()` stays as an alias (the
   same function).
-* `autoplot()` (`ggplot2`) of a georeferenced `pic()` draws it with
-  `geom_sf()`: fills and strokes as pic drew them, texts as labels, justified
-  and turned as pic placed them (`geopic_anchor` → `hjust`/`vjust`,
-  `geopic_rotation` → `angle`), so `"2 km" above` sits above its line.
+* `rpic_layers(x)` returns the `ggplot2` layers that draw a georeferenced
+  drawing as pic drew it — `ggplot() + rpic_layers(x)`, alone or over a
+  basemap: shapes through `geom_sf()` with their fills and strokes
+  (`linewidth = NULL` uses pic's own widths), texts as labels justified and
+  turned as pic placed them (`geopic_anchor` → `hjust`/`vjust`,
+  `geopic_rotation` → `angle`, so `"2 km" above` sits above its line), and
+  `coord_sf(clip = "off")`. `x` is an `rpic_sf()` data frame or pic source.
+* `autoplot()` (`ggplot2`) of a georeferenced `pic()` is `rpic_layers()` on a
+  blank theme.
 * `vignette("maps")` opens with a three-line quick start, shows what
   `rpic_sf()` returns column by column, tells pic's `scale`, `geo_scale` and
   text sizes apart, adds a `geo_bearing` example (a pitch laid at 55°) and

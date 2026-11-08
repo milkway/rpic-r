@@ -14,7 +14,9 @@ in \code{...}.}
 \item{...}{passed to \code{\link[=rpic_sf]{rpic_sf()}} (\code{anchor}, \code{scale}, \code{bearing}, \code{frame},
 \code{features}, ...).}
 
-\item{linewidth}{line width of the shapes, in \code{ggplot2} units (mm).}
+\item{linewidth}{line width of the shapes, in \code{ggplot2} units (mm).
+\code{NULL} draws each shape at pic's own width (the \code{stroke_width} column,
+points, 0.8 by default).}
 
 \item{text_size}{size of the labels, in \code{ggplot2} units (mm).}
 }
@@ -23,22 +25,12 @@ a \code{ggplot} object.
 }
 \description{
 \code{autoplot()} (from \code{ggplot2}) for a \code{\link[=pic]{pic()}} object: georeferences the
-drawing with \code{\link[=rpic_sf]{rpic_sf()}} and draws it with \code{\link[ggplot2:geom_sf]{ggplot2::geom_sf()}} as pic
-drew it — fills and strokes from the \code{fill} and \code{stroke} columns (pic
-colours are hex strings already, so the scales are identity scales) and
-every text (\code{geopic_kind} \code{"text"} and \code{"title"}) placed as a label at its
-point with \code{\link[ggplot2:geom_sf_text]{ggplot2::geom_sf_text()}}, justified and turned as pic placed
-it: the \code{geopic_anchor} compass becomes \code{hjust}/\code{vjust} (\code{above} puts the
-point at the label's bottom, \code{ljust} at its left) and \code{geopic_rotation}
-becomes \code{angle}. The result is an ordinary \code{ggplot}:
-add scales, a theme or more layers with \code{+} (a layer added this way goes
-on top of the drawing; for a basemap under it, build the plot from
-\code{\link[=rpic_sf]{rpic_sf()}} directly, as \code{vignette("maps")} does).
-}
-\details{
-Strokes are drawn at one width (\code{linewidth}), not pic's per-object
-\code{stroke_width}; use \code{\link[=rpic_sf]{rpic_sf()}} with your own \code{geom_sf()} layers for
-anything finer.
+drawing with \code{\link[=rpic_sf]{rpic_sf()}} and draws it with \code{\link[=rpic_layers]{rpic_layers()}} — fills,
+strokes and labels as pic drew and placed them — on a blank theme. The
+result is an ordinary \code{ggplot}: add scales, a theme or more layers with
+\code{+} (a layer added this way goes on top of the drawing; for a basemap
+under it, build the plot from \code{\link[=rpic_layers]{rpic_layers()}} directly, as
+\code{vignette("maps")} does).
 }
 \section{Requirements}{
 
@@ -56,5 +48,5 @@ if (requireNamespace("ggplot2", quietly = TRUE) &&
 }
 }
 \seealso{
-\code{\link[=rpic_sf]{rpic_sf()}}; \code{vignette("maps")}.
+\code{\link[=rpic_layers]{rpic_layers()}}; \code{\link[=rpic_sf]{rpic_sf()}}; \code{vignette("maps")}.
 }
