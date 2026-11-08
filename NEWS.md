@@ -42,7 +42,14 @@ object for the source, pipe-first verbs, snake_case columns, data frames.
   `maplibre() |> add_rpic(pic(src))`. `rpic_mapgl()` stays as an alias (the
   same function).
 * `autoplot()` (`ggplot2`) of a georeferenced `pic()` draws it with
-  `geom_sf()`: fills and strokes as pic drew them, texts as labels.
+  `geom_sf()`: fills and strokes as pic drew them, texts as labels, justified
+  and turned as pic placed them (`geopic_anchor` → `hjust`/`vjust`,
+  `geopic_rotation` → `angle`), so `"2 km" above` sits above its line.
+* `vignette("maps")` opens with a three-line quick start, shows what
+  `rpic_sf()` returns column by column, tells pic's `scale`, `geo_scale` and
+  text sizes apart, adds a `geo_bearing` example (a pitch laid at 55°) and
+  draws every figure on the longitude/latitude grid with its labels placed
+  as pic placed them.
 * Vignettes, the mapgl article, README and examples are written with `pic()`
   and `|>`; the reference index is grouped as Compile and export · Drawing
   data · Maps · knitr.

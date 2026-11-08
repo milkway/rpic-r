@@ -255,3 +255,21 @@ test_that("autoplot() of a georeferenced pic() is a ggplot", {
   expect_no_warning(ggplot2::ggplot_build(g))
   expect_error(ggplot2::autoplot(pic("box")), class = "rpic_geo_error")
 })
+
+test_that("autoplot() places labels by pic's anchor and rotation", {
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("sf")
+  p <- pic('geo_lon = 0; geo_lat = 0; geo_scale = 1000; geo_bearing = 30
+box wid 1 ht 0.5 at (0.5, -0.5)
+"up" above at (0, 0)
+"left" ljust at (1, 0)')
+  g <- ggplot2::autoplot(p)
+  labels <- ggplot2::layer_data(g, 2)
+  # "above": the point is at the text's bottom -> vjust 0; ljust -> hjust 0
+  expect_equal(labels$vjust[labels$label == "up"], 0)
+  expect_equal(labels$hjust[labels$label == "up"], 0.5)
+  expect_equal(labels$hjust[labels$label == "left"], 0)
+  expect_equal(labels$vjust[labels$label == "left"], 0.5)
+  # the drawing's bearing turns the texts the other way (counter-clockwise from east)
+  expect_equal(unique(labels$angle), -30)
+})
