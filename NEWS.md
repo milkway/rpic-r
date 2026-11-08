@@ -128,6 +128,14 @@ object for the source, pipe-first verbs, snake_case columns, data frames.
 * The knitr engine includes the rendered PNG as a figure again; with
   current knitr it printed the figure's path as text output.
 
+## Engine 0.17.1
+
+Tracks the rpic engine 0.17.1 (vendored crates 0.17.1): a fix in macro
+substitution so a `"$n"` label inside a library macro keeps the library's
+source position (it surfaced as a user position before); no R-visible
+change beyond `rpic_objects()` reporting the right `file`/`end_col` for
+such labels.
+
 ## Engine 0.17.0
 
 Tracks the rpic engine 0.17.0 (vendored crates `rpic-core`/`rpic-render`/

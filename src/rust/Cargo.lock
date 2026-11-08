@@ -374,9 +374,9 @@ dependencies = [
 
 [[package]]
 name = "geopic-core"
-version = "0.17.0"
+version = "0.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d994612beca496907aa70aac494ea1b54fcb3b17506471ed24dd8d4ceb33600"
+checksum = "7b6588db436b9cd3484318640a41c209c747cdb817a055b1a227736cff4620b6"
 dependencies = [
  "geographiclib-rs",
  "serde",
@@ -1028,15 +1028,15 @@ dependencies = [
 
 [[package]]
 name = "rpic-core"
-version = "0.17.0"
+version = "0.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cd604067ee334c9d2ee1467aa829f4200d961b63c7524b1c8ccae15a0343eadb"
+checksum = "1e8ca735778e457ad30d1f4c81850081a5d863524d90332a745d1d8ca83b49b0"
 
 [[package]]
 name = "rpic-render"
-version = "0.17.0"
+version = "0.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "44e91a851efc9e7698c9a11afa864ed9b12e2fadecd3fe8ad84bf172ba297721"
+checksum = "9cc39933951e9c793daab1ffbff169cd3f61fba8af564e4b2b54ed81de3c3ff0"
 dependencies = [
  "ratex-layout",
  "ratex-parser",
