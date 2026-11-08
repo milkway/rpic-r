@@ -145,17 +145,29 @@ if (requireNamespace("sf", quietly = TRUE) && requireNamespace("ggplot2", quietl
   }
   # every pic colour is already a hex string: identity scales draw the
   # drawing as drawn; text features are labels, not markers
-  pic_layers <- function(x) {
+  # the same helper the vignette prints: anchors -> hjust/vjust, rotation ->
+  # angle, and the lon/lat grid so the Earth is visible
+  pic_layers <- function(x, x_breaks = NULL) {
     # text and shape titles (engine 0.15.1: a point at the text's centre)
     shapes <- x[!x$geopic_kind %in% c("text", "title"), ]
     labels <- x[x$geopic_kind %in% c("text", "title"), ]
+    a <- ifelse(is.na(labels$geopic_anchor), "c", labels$geopic_anchor)
+    labels$hjust <- ifelse(grepl("e", a), 1, ifelse(grepl("w", a), 0, 0.5))
+    labels$vjust <- ifelse(grepl("n", a), 1, ifelse(grepl("s", a), 0, 0.5))
+    labels$angle <- ifelse(is.na(labels$geopic_rotation), 0, labels$geopic_rotation)
     list(
       geom_sf(data = shapes, aes(fill = fill, colour = stroke), linewidth = 0.4),
-      geom_sf_text(data = labels, aes(label = geopic_text), size = 3),
+      geom_sf_text(data = labels,
+                   aes(label = geopic_text, hjust = hjust, vjust = vjust, angle = angle),
+                   size = 3, fun.geometry = function(g) g),
       scale_fill_identity(), scale_colour_identity(),
       coord_sf(clip = "off"),
-      labs(x = NULL, y = NULL), theme_void(base_size = 9),
-      theme(plot.margin = margin(12, 24, 12, 24))
+      if (is.null(x_breaks)) scale_x_continuous(n.breaks = 4) else scale_x_continuous(breaks = x_breaks),
+      labs(x = NULL, y = NULL),
+      theme_minimal(base_size = 8),
+      theme(panel.grid = element_line(colour = "grey88", linewidth = 0.25),
+            axis.text = element_text(colour = "grey45"),
+            plot.margin = margin(8, 16, 8, 16))
     )
   }
   save_map <- function(name, p, width = 5, height = 3.6) {
@@ -168,8 +180,31 @@ if (requireNamespace("sf", quietly = TRUE) && requireNamespace("ggplot2", quietl
 
   for (name in c("callout", "radius", "two-control-points", "arrow-between-features")) {
     x <- pic(geo_src(name)) |> rpic_sf()
-    save_map(paste0("geo-", name), ggplot() + pic_layers(x))
+    # the Recife-Olinda arrow is tall and narrow: three longitude ticks fit
+    br <- if (name == "arrow-between-features") seq(-34.87, -34.85, by = 0.01) else NULL
+    save_map(paste0("geo-", name), ggplot() + pic_layers(x, x_breaks = br))
   }
+
+  # geo_bearing: a pitch drawn in metres, laid at 55 degrees
+  pitch <- pic('
+geo_lon = -34.8947
+geo_lat = -8.0636
+geo_scale = 20           # one inch is 20 m
+geo_bearing = 55         # the +y axis points 55 degrees east of north
+scale = 20               # so pic units are metres
+margin = 3
+
+Field: box wid 105 ht 68 shaded "#e4efe4" outlined "#2e7d32"
+line from Field.n to Field.s outlined "#2e7d32"
+circle rad 9.15 at Field.c outlined "#2e7d32"
+box wid 16.5 ht 40.3 with .w at Field.w outlined "#2e7d32"
+box wid 16.5 ht 40.3 with .e at Field.e outlined "#2e7d32"
+dot at Field.c rad 0.3
+"105 m" below at Field.s + (0, -2)
+"68 m" ljust at Field.e + (2, 0)
+') |>
+    rpic_sf()
+  save_map("geo-bearing", ggplot() + pic_layers(pitch))
 
   nc <- sf::st_read(system.file("shape/nc.shp", package = "sf"), quiet = TRUE)
   two <- nc[nc$NAME %in% c("Mecklenburg", "Wake"), ]
@@ -184,5 +219,6 @@ arrow from Mecklenburg to Wake thick 1.5 color "firebrick"
   save_map("geo-nc", ggplot() +
     geom_sf(data = nc, fill = "grey95", colour = "grey70", linewidth = 0.2) +
     geom_sf(data = two, fill = "#cfe3d6", colour = "#2f5d43", linewidth = 0.3) +
-    pic_layers(route) + theme(plot.margin = margin(4, 4, 4, 4)), width = 6.5, height = 3)
+    pic_layers(route) + theme_void(base_size = 9) + theme(plot.margin = margin(4, 4, 4, 4)),
+    width = 6.5, height = 3)
 }

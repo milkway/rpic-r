@@ -7,7 +7,10 @@
 #' drew it — fills and strokes from the `fill` and `stroke` columns (pic
 #' colours are hex strings already, so the scales are identity scales) and
 #' every text (`geopic_kind` `"text"` and `"title"`) placed as a label at its
-#' point with [ggplot2::geom_sf_text()]. The result is an ordinary `ggplot`:
+#' point with [ggplot2::geom_sf_text()], justified and turned as pic placed
+#' it: the `geopic_anchor` compass becomes `hjust`/`vjust` (`above` puts the
+#' point at the label's bottom, `ljust` at its left) and `geopic_rotation`
+#' becomes `angle`. The result is an ordinary `ggplot`:
 #' add scales, a theme or more layers with `+` (a layer added this way goes
 #' on top of the drawing; for a basemap under it, build the plot from
 #' [rpic_sf()] directly, as `vignette("maps")` does).
@@ -57,10 +60,21 @@ autoplot.rpic_source <- function(object, ..., linewidth = 0.4, text_size = 3) {
                               linewidth = linewidth)
   }
   if (nrow(labels)) {
+    # pic's compass anchor -> ggplot2 justification: the anchor names where
+    # the POINT is on the label ("s" = its bottom, so the text sits above)
+    a <- if ("geopic_anchor" %in% names(labels)) labels$geopic_anchor else NA_character_
+    a <- ifelse(is.na(a), "c", a)
+    labels$.hjust <- ifelse(grepl("e", a), 1, ifelse(grepl("w", a), 0, 0.5))
+    labels$.vjust <- ifelse(grepl("n", a), 1, ifelse(grepl("s", a), 0, 0.5))
+    rot <- if ("geopic_rotation" %in% names(labels)) labels$geopic_rotation else NA_real_
+    labels$.angle <- ifelse(is.na(rot), 0, rot)
     # the labels are points already: skip geom_sf_text()'s default
     # st_point_on_surface(), which warns on lon/lat data
-    p <- p + ggplot2::geom_sf_text(data = labels, mapping = aes(label = "geopic_text"),
-                                   size = text_size, fun.geometry = function(g) g)
+    p <- p + ggplot2::geom_sf_text(
+      data = labels,
+      mapping = aes(label = "geopic_text", hjust = ".hjust", vjust = ".vjust", angle = ".angle"),
+      size = text_size, fun.geometry = function(g) g
+    )
   }
   p + ggplot2::scale_fill_identity() + ggplot2::scale_colour_identity() +
     ggplot2::coord_sf(clip = "off") + ggplot2::labs(x = NULL, y = NULL) +
