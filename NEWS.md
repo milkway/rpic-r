@@ -128,6 +128,19 @@ object for the source, pipe-first verbs, snake_case columns, data frames.
 * The knitr engine includes the rendered PNG as a figure again; with
   current knitr it printed the figure's path as text output.
 
+## Engine 0.18.0
+
+Tracks the rpic engine 0.18.0 (vendored crates 0.18.0). What reaches R users:
+
+* A text object takes colour the dpic way: `"note" shaded "gray"` fills the
+  glyphs (`outlined` strokes them, `colored` both). `rpic_scene()` text lines
+  carry `color`/`stroke` when set; `rpic_sf()`/`rpic_geojson()` are unchanged.
+* A free text of several lines keeps every line at 11 pt one em apart (they
+  were squeezed before), and a `"Name" "sub" small` stack keeps the name at
+  11 pt. A repeated size word keeps its last value (`box wid 1 wid 2` is 2 in).
+* The engine repo now ships an Agent Skill (`skills/rpic`) that draws
+  diagrams, circuits and maps with rpic; its map recipes use this package.
+
 ## Engine 0.17.1
 
 Tracks the rpic engine 0.17.1 (vendored crates 0.17.1): a fix in macro

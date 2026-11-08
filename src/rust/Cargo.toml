@@ -15,9 +15,9 @@ path = 'document.rs'
 
 [dependencies]
 extendr-api = '*'
-rpic-core = "0.17.1"
-rpic-render = "0.17.1"
-geopic-core = "0.17.1"
+rpic-core = "0.18.0"
+rpic-render = "0.18.0"
+geopic-core = "0.18.0"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
