@@ -135,9 +135,23 @@ rpic_maplibre_layers <- function(x, ..., text_scale = 1) {
 #' (CARTO's positron: `Montserrat Medium, Open Sans Regular, ...`). The
 #' style is read as for `before` (a URL is fetched once per session); when
 #' it cannot be read or has no such stack, the engine's font is kept,
-#' without a warning of its own. `"spec"` keeps the engine's
-#' `"Noto Sans Regular"`; any other character vector is the font stack
-#' itself (names the style's glyph server must serve).
+#' without a warning of its own. `"spec"` keeps the engine's Noto Sans
+#' placeholders; any other character vector is the font stack itself, for
+#' every label (names the style's glyph server must serve).
+#'
+#' A label written `bold` or `italic` in the pic source keeps its face on
+#' the map: the features carry `geopic:font_weight` and `geopic:font_style`,
+#' and the layers' `text-font` picks a stack from them. With `"style"` the
+#' bold, italic and bold italic stacks are looked for among the stacks the
+#' style's own `symbol` layers use — the same family as the body font,
+#' `Bold` before `SemiBold`/`DemiBold` before heavier faces, an italic of
+#' plain weight — because those are the faces its glyph server is known to
+#' serve; a face the style does not use falls back to the body font (bold
+#' italic: to the bold, then the italic). A named list
+#' `list(regular =, bold =, italic =, bold_italic =)` of stacks names them
+#' outright (`regular` required, the same fallbacks). `mono` and
+#' `font "..."` labels are drawn in the body family: the family travels as
+#' `geopic:font_family`, but basemap glyph servers rarely have more.
 #'
 #' `rpic_mapgl()` is the same function under its first name (an alias kept
 #' for code written against the development version).
@@ -147,9 +161,10 @@ rpic_maplibre_layers <- function(x, ..., text_scale = 1) {
 #' @inheritParams rpic_maplibre_layers
 #' @param before where the geometry layers go: `NULL` (on top), `"labels"`
 #'   (under the basemap's labels) or a layer id; see Details.
-#' @param font the labels' font stack: `"style"` (the style's own font),
-#'   `"spec"` (the engine's) or a character vector of font names; see
-#'   Details.
+#' @param font the labels' font: `"style"` (the style's own fonts),
+#'   `"spec"` (the engine's), a character vector of font names (one stack
+#'   for every label) or a named list of stacks, `list(regular =, bold =,
+#'   italic =, bold_italic =)`; see Details.
 #' @param fit zoom the map to the drawing's bounding box.
 #' @return `map`, with the source and the layers added (pipe-friendly).
 #' @section Requirements:
@@ -192,8 +207,9 @@ add_rpic <- function(map, x, ..., before = NULL, text_scale = 1, font = "style",
                             is.na(before) || !nzchar(before))) {
     stop("`before` must be NULL, \"labels\" or a layer id (a single string)", call. = FALSE)
   }
-  if (!is.character(font) || !length(font) || anyNA(font) || !all(nzchar(font))) {
-    stop("`font` must be \"style\", \"spec\" or a font stack (a character vector)",
+  if (!.is_font_stack(font) && !.is_font_faces(font)) {
+    stop(paste0("`font` must be \"style\", \"spec\", a font stack (a character ",
+                "vector) or a list(regular =, bold =, italic =, bold_italic =) of stacks"),
          call. = FALSE)
   }
   opts <- .layer_options(text_scale, sys.call())
@@ -228,10 +244,10 @@ add_rpic <- function(map, x, ..., before = NULL, text_scale = 1, font = "style",
   }
   # resolved before our layers join map$x$layers (so they are never a target)
   below <- .before_id(map, before, read_style)
-  stack <- .text_font(font, read_style)
+  text_font <- .text_font(font, read_style)
   for (l in layers) {
-    if (!is.null(stack) && l$id %in% .pic_text_layers) {
-      l$layout[["text-font"]] <- as.list(stack)
+    if (!is.null(text_font) && l$id %in% .pic_text_layers) {
+      l$layout[["text-font"]] <- text_font
     }
     # the drawing's own labels always go on top (the JS attach() rule)
     b <- if (l$id %in% .pic_text_layers) NULL else below
@@ -427,40 +443,142 @@ rpic_mapgl <- add_rpic
   if (length(after)) after[1] else NULL
 }
 
-# The `text-font` stack for the drawing's label layers (NULL = keep the
-# spec's): "spec" keeps it; "style" = the style's own font, the most common
-# plain `text-font` array among its symbol layers, upright Regular/Medium
-# stacks (first name) preferred over bold or italic ones, ties to the first
-# in style order; an unreadable style or one without such stacks keeps the
-# spec's, silently (`before` already warns when it needed the style). Any
-# other vector is the stack itself.
+.is_font_stack <- function(f) {
+  is.character(f) && length(f) > 0 && !anyNA(f) && all(nzchar(f))
+}
+
+.font_faces <- c("regular", "bold", "italic", "bold_italic")
+
+.is_font_faces <- function(f) {
+  is.list(f) && !is.null(names(f)) && all(names(f) %in% .font_faces) &&
+    !anyDuplicated(names(f)) && .is_font_stack(f$regular) &&
+    all(vapply(f, .is_font_stack, NA))
+}
+
+# The `text-font` of the drawing's label layers (NULL = keep the spec's), as
+# the engine's JS `attach()` resolves it (DECISIONS G12): the plain stack
+# when every face is the same one, else the `case` expression choosing a
+# stack from `geopic:font_weight` / `geopic:font_style`. "spec" keeps the
+# spec's; a character vector is one stack for every label; a named list
+# gives the faces; "style" reads them from the style (`.style_faces()`); an
+# unreadable style or one without stacks keeps the spec's, silently
+# (`before` already warns when it needed the style).
 .text_font <- function(font, read_style) {
   if (identical(font, "spec")) return(NULL)
-  if (!identical(font, "style")) return(font)
-  style <- read_style()
-  if (!is.null(style$error)) return(NULL)
+  faces <- if (is.list(font)) {
+    regular <- font$regular
+    bold <- if (is.null(font$bold)) regular else font$bold
+    italic <- if (is.null(font$italic)) regular else font$italic
+    both <- font$bold_italic
+    if (is.null(both)) both <- font$bold
+    if (is.null(both)) both <- font$italic
+    if (is.null(both)) both <- regular
+    list(regular = regular, bold = bold, italic = italic, bold_italic = both)
+  } else if (!identical(font, "style")) {
+    list(regular = font, bold = font, italic = font, bold_italic = font)
+  } else {
+    style <- read_style()
+    if (!is.null(style$error)) return(NULL)
+    .style_faces(style$layers)
+  }
+  if (is.null(faces)) return(NULL)
+  same <- vapply(faces[-1], identical, NA, faces$regular)
+  if (all(same)) return(as.list(faces$regular))
+  .text_font_case(faces)
+}
+
+# The engine's `maplibre::text_font` for these faces, as mapgl takes it.
+.text_font_case <- function(faces) {
+  is_bold <- list("==", list("get", "geopic:font_weight"), "bold")
+  is_italic <- list("==", list("get", "geopic:font_style"), "italic")
+  lit <- function(stack) list("literal", as.list(stack))
+  list("case",
+       list("all", is_bold, is_italic), lit(faces$bold_italic),
+       is_bold, lit(faces$bold),
+       is_italic, lit(faces$italic),
+       lit(faces$regular))
+}
+
+# The plain `text-font` stacks of a style's symbol layers, in style order
+# (an expression — `["literal", ...]`, `["step", ...]` — is not a stack).
+.style_stacks <- function(layers) {
   stacks <- list()
-  for (l in style$layers) {
+  for (l in layers) {
     if (!is.list(l) || !identical(as.character(l$type)[1], "symbol")) next
     f <- if (is.list(l$layout)) l$layout[["text-font"]]
     if (is.list(f)) {
       if (!all(vapply(f, function(v) is.character(v) && length(v) == 1, NA))) next
       f <- unlist(f)
     }
-    # an expression (`["literal", ...]`, `["step", ...]`) is not a stack
-    if (is.character(f) && length(f) && !anyNA(f) && all(nzchar(f)) &&
-        !grepl("^[a-z-]+$", f[1])) {
+    if (.is_font_stack(f) && !grepl("^[a-z-]+$", f[1])) {
       stacks[[length(stacks) + 1]] <- f
     }
   }
+  stacks
+}
+
+.weight_words <- c("Thin", "Hairline", "ExtraLight", "UltraLight", "Light", "Regular",
+                   "Normal", "Roman", "Book", "Medium", "SemiBold", "Semibold",
+                   "DemiBold", "Demibold", "Bold", "ExtraBold", "UltraBold", "Black",
+                   "Heavy")
+.plain_words <- c("Regular", "Normal", "Roman", "Book", "Medium")
+.bold_words <- c("SemiBold", "Semibold", "DemiBold", "Demibold", "Bold", "ExtraBold",
+                 "UltraBold", "Black", "Heavy")
+.italic_words <- c("Italic", "Oblique")
+
+# A face name split into its family and its trailing weight and slant words
+# ("Montserrat SemiBold Italic" -> family "Montserrat").
+.parse_face <- function(name) {
+  words <- strsplit(trimws(name), "\\s+")[[1]]
+  tail <- character()
+  while (length(words) > 1 && words[length(words)] %in% c(.weight_words, .italic_words)) {
+    tail <- c(words[length(words)], tail)
+    words <- words[-length(words)]
+  }
+  list(family = paste(words, collapse = " "), tail = tail,
+       bold = any(tail %in% .bold_words), italic = any(tail %in% .italic_words),
+       plain_weight = all(tail %in% c(.plain_words, .italic_words)))
+}
+
+# The faces a style offers: `regular` = the most common stack whose first
+# name is an upright Regular/Medium (with none, the most common of all; ties
+# to the first in style order); `bold`, `italic`, `bold_italic` = the most
+# common stack of the same family (by first name) with that weight and
+# slant — Bold before SemiBold/DemiBold before heavier, an italic of plain
+# weight — falling back to `regular` (bold italic: bold, then italic). NULL
+# when the style has no stack.
+.style_faces <- function(layers) {
+  stacks <- .style_stacks(layers)
   if (!length(stacks)) return(NULL)
   keys <- vapply(stacks, function(f) paste(f, collapse = "\u001f"), "")
-  upright <- vapply(stacks, function(f) {
-    grepl("Regular|Medium", f[1]) && !grepl("Italic", f[1])
-  }, NA)
-  pool <- if (any(upright)) which(upright) else seq_along(stacks)
-  counts <- table(factor(keys[pool], levels = unique(keys[pool])))
-  stacks[[pool[match(names(counts)[which.max(counts)], keys[pool])]]]
+  uniq <- !duplicated(keys)
+  n <- as.integer(table(factor(keys, levels = keys[uniq])))
+  stacks <- stacks[uniq]
+  # among the candidates `which`: lowest rank, then most common, then first
+  pick <- function(which, rank = rep(0, length(stacks))) {
+    if (!length(which)) return(NULL)
+    stacks[[which[order(rank[which], -n[which], which)[1]]]]
+  }
+  first <- vapply(stacks, function(f) f[1], "")
+  upright <- grepl("Regular|Medium", first) & !grepl("Italic", first)
+  regular <- pick(if (any(upright)) which(upright) else seq_along(stacks))
+  faces <- lapply(first, .parse_face)
+  family <- .parse_face(regular[1])$family
+  same <- vapply(faces, function(f) identical(f$family, family), NA)
+  is_bold <- vapply(faces, function(f) f$bold, NA)
+  is_italic <- vapply(faces, function(f) f$italic, NA)
+  plain <- vapply(faces, function(f) f$plain_weight, NA)
+  rank <- vapply(faces, function(f) {
+    if ("Bold" %in% f$tail) 0 else if (any(grepl("^(Semi|Demi)", f$tail, ignore.case = TRUE))) 1 else 2
+  }, 0)
+  bold <- pick(which(same & is_bold & !is_italic), rank)
+  italic <- pick(which(same & is_italic & plain))
+  both <- pick(which(same & is_bold & is_italic), rank)
+  if (is.null(both)) both <- bold
+  if (is.null(both)) both <- italic
+  or_regular <- function(f) if (is.null(f)) regular else f
+  list(regular = regular, bold = or_regular(bold), italic = or_regular(italic),
+       bold_italic = or_regular(both))
 }
 
 # Layers as a table of `id` and `type`, without the layers that have no id

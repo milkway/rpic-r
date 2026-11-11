@@ -525,12 +525,27 @@ text_fonts <- function(m) {
          function(l) l$layout[["text-font"]])
 }
 body_stack <- list("Montserrat Medium", "Open Sans Regular", "Noto Sans Regular")
+# The `case` expression add_rpic() builds for these faces (DECISIONS G12).
+face_case <- function(regular, bold = regular, italic = regular, bold_italic = bold) {
+  is_bold <- list("==", list("get", "geopic:font_weight"), "bold")
+  is_italic <- list("==", list("get", "geopic:font_style"), "italic")
+  lit <- function(f) list("literal", as.list(f))
+  list("case", list("all", is_bold, is_italic), lit(bold_italic), is_bold, lit(bold),
+       is_italic, lit(italic), lit(regular))
+}
+carto_faces <- face_case(
+  body_stack,
+  list("Montserrat SemiBold", "Open Sans Bold", "Noto Sans Regular"),
+  list("Montserrat Regular Italic", "Open Sans Italic", "Noto Sans Regular")
+)
 
 test_that("add_rpic font = \"style\" uses the style's upright body font", {
   skip_if_not_installed("mapgl")
   src <- read_pic("radius")
   m <- add_rpic(mapgl::maplibre(style = carto_like()), src)
-  expect_identical(text_fonts(m), list(body_stack, body_stack))
+  # the body font, with the style's own SemiBold and Italic for bold and
+  # italic labels (bold italic: the style has none, so the bold)
+  expect_identical(text_fonts(m), list(carto_faces, carto_faces))
   # geometry layers untouched; the rest of the label layout is the spec's
   spec <- rpic_maplibre_layers(rpic_geojson(src))
   lay <- m$x$layers[[5]]$layout
@@ -545,6 +560,24 @@ test_that("add_rpic font = \"style\" uses the style's upright body font", {
     list(id = "b", type = "symbol", layout = list(`text-font` = list("B Black"))),
     list(id = "c", type = "symbol", layout = list(`text-font` = list("B Black"))))
   expect_identical(text_fonts(add_rpic(mapgl::maplibre(style = st), src))[[1]], list("B Black"))
+  # the faces of the body family only: Bold before SemiBold before Black, an
+  # italic of plain weight, a real bold italic; another family is never borrowed
+  one <- function(id, f) list(id = id, type = "symbol", layout = list(`text-font` = list(f)))
+  st3 <- style_list(
+    one("a", "Montserrat Medium"), one("b", "Montserrat SemiBold"),
+    one("c", "Montserrat SemiBold"), one("d", "Montserrat Black"),
+    one("e", "Montserrat Light Italic"), one("f", "Montserrat Medium Italic"),
+    one("g", "Montserrat SemiBold Italic"), one("h", "Open Sans Bold"))
+  expect_identical(
+    text_fonts(add_rpic(mapgl::maplibre(style = st3), src))[[1]],
+    face_case("Montserrat Medium", "Montserrat SemiBold", "Montserrat Medium Italic",
+              "Montserrat SemiBold Italic"))
+  st4 <- style_list(
+    one("a", "Noto Sans Regular"), one("b", "Noto Sans SemiBold"),
+    one("c", "Noto Sans SemiBold"), one("d", "Noto Sans Bold"), one("e", "Noto Sans Italic"))
+  expect_identical(
+    text_fonts(add_rpic(mapgl::maplibre(style = st4), src))[[1]],
+    face_case("Noto Sans Regular", "Noto Sans Bold", "Noto Sans Italic"))
   st2 <- style_list(
     list(id = "a", type = "symbol", layout = list(`text-font` = list("A Regular"))),
     list(id = "b", type = "symbol", layout = list(`text-font` = list("B Medium"))))
@@ -567,6 +600,19 @@ test_that("add_rpic font: \"spec\", an explicit stack, styles without fonts", {
   expect_match(as.character(jsonlite::toJSON(m3$x$layers[[5]]$layout["text-font"],
                                              auto_unbox = TRUE)),
                "\\[\"Open Sans Regular\"\\]", fixed = FALSE)
+  # named faces: missing ones fall back (bold italic -> bold -> italic -> regular)
+  m6 <- add_rpic(mapgl::maplibre(style = carto_like()), src,
+                 font = list(regular = "Inter Regular", bold = "Inter Bold"))
+  expect_identical(text_fonts(m6)[[1]], face_case("Inter Regular", "Inter Bold"))
+  m7 <- add_rpic(mapgl::maplibre(style = carto_like()), src,
+                 font = list(regular = "Inter Regular", italic = "Inter Italic"))
+  expect_identical(text_fonts(m7)[[2]],
+                   face_case("Inter Regular", "Inter Regular", "Inter Italic", "Inter Italic"))
+  for (bad in list(list(bold = "Inter Bold"), list(regular = "Inter", heavy = "Inter Black"),
+                   list(regular = "Inter", bold = 1), list("Inter"))) {
+    expect_error(add_rpic(mapgl::maplibre(style = carto_like()), src, font = bad),
+                 "`font` must be")
+  }
   # no symbol layers / no stacks: the spec's font, silently
   st <- style_list(list(id = "water", type = "fill"))
   expect_no_warning(m4 <- add_rpic(mapgl::maplibre(style = st), src))
@@ -592,7 +638,7 @@ test_that("add_rpic font = \"style\" reads a fetched style once, data-frame laye
   m <- add_rpic(mapgl::maplibre(style = "https://example.org/carto.json"), read_pic("radius"),
                 before = "labels")
   expect_identical(n, 1)
-  expect_identical(lapply(text_fonts(m), unlist), list(unlist(body_stack), unlist(body_stack)))
+  expect_identical(text_fonts(m), list(carto_faces, carto_faces))
   expect_identical(before_ids(m), c(rep("place_suburbs", 4), NA, NA))
   # an unreadable URL is tried once per call, for `before` and `font` alike
   clear_style_cache()
@@ -604,4 +650,34 @@ test_that("add_rpic font = \"style\" reads a fetched style once, data-frame laye
   expect_warning(add_rpic(mapgl::maplibre(style = "https://example.org/carto.json"),
                           read_pic("radius"), before = "labels"), "offline")
   expect_identical(n, 1)
+})
+
+test_that("a label's face reaches the features and the layers (engine 0.19.0)", {
+  src <- read_pic("label-faces")
+  x <- rpic_sf(src)
+  lab <- x[x$geopic_kind %in% c("text", "title"), ]
+  expect_identical(lab$geopic_text,
+                   c("Marco Zero", "Porto do Recife", "Bairro do Recife",
+                     "ilha, centro hist\u00f3rico", "200 m"))
+  expect_identical(lab$geopic_font_weight, c("bold", NA, "bold", NA, NA))
+  expect_identical(lab$geopic_font_style, c(NA, "italic", NA, NA, NA))
+  mono <- rpic_sf('geo_lon = 0; geo_lat = 0; geo_scale = 100\n"8080" mono at (0, 0)')
+  expect_identical(mono$geopic_font_family, "monospace")
+  # the spec picks the face from those properties
+  layers <- round_trip(rpic_maplibre_layers(rpic_geojson(src)))
+  noto <- face_case("Noto Sans Regular", "Noto Sans Bold", "Noto Sans Italic")
+  expect_identical(layers[[5]]$layout[["text-font"]], noto)
+  expect_identical(layers[[6]]$layout[["text-font"]], noto)
+  expect_layers(layers, snapshot("label-faces"))
+})
+
+test_that("rpic_layers() draws bold, italic and mono labels in their face", {
+  skip_if_not_installed("ggplot2")
+  src <- paste0(read_pic("label-faces"), '\n"8080" mono bold italic at (0, 1)')
+  ls <- rpic_layers(src)
+  text <- Filter(function(l) inherits(l, "Layer") && inherits(l$geom, "GeomText"), ls)[[1]]
+  expect_identical(text$data$.face,
+                   c("bold", "italic", "bold", "plain", "plain", "bold.italic"))
+  expect_identical(text$data$.family, c("", "", "", "", "", "mono"))
+  expect_no_error(ggplot2::ggplot_build(ggplot2::ggplot() + ls))
 })

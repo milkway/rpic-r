@@ -26,6 +26,7 @@ in snake_case. Use it to translate the engine's vocabulary (its
    \code{geopic:schema}, \code{geopic:id}, \code{geopic:kind}, \code{geopic:z} \tab \code{geopic_schema}, \code{geopic_id}, \code{geopic_kind}, \code{geopic_z} \cr
    \code{geopic:label}, \code{geopic:block}, \code{geopic:class}, \code{geopic:link} \tab \code{geopic_label}, \code{geopic_block}, \code{geopic_class}, \code{geopic_link} \cr
    \code{geopic:text}, \code{geopic:rotation}, \code{geopic:anchor}, \code{geopic:font_size} \tab \code{geopic_text}, \code{geopic_rotation}, \code{geopic_anchor}, \code{geopic_font_size} \cr
+   \code{geopic:font_weight}, \code{geopic:font_style}, \code{geopic:font_family} \tab \code{geopic_font_weight}, \code{geopic_font_style}, \code{geopic_font_family} \cr
    \code{geopic:dash}, \code{geopic:hatch}, \code{geopic:placement}, \verb{geopic:for} \tab \code{geopic_dash}, \code{geopic_hatch}, \code{geopic_placement}, \code{geopic_for} \cr
    \code{geopic:head}, \code{geopic:filled}, \code{geopic:part}, \code{geopic:role}, \code{geopic:radius_in} \tab \code{geopic_head}, \code{geopic_filled}, \code{geopic_part}, \code{geopic_role}, \code{geopic_radius_in} \cr
 }

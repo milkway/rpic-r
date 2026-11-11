@@ -217,6 +217,7 @@ rpic_sf <- function(src, ...) {
 #' | `geopic:schema`, `geopic:id`, `geopic:kind`, `geopic:z` | `geopic_schema`, `geopic_id`, `geopic_kind`, `geopic_z` |
 #' | `geopic:label`, `geopic:block`, `geopic:class`, `geopic:link` | `geopic_label`, `geopic_block`, `geopic_class`, `geopic_link` |
 #' | `geopic:text`, `geopic:rotation`, `geopic:anchor`, `geopic:font_size` | `geopic_text`, `geopic_rotation`, `geopic_anchor`, `geopic_font_size` |
+#' | `geopic:font_weight`, `geopic:font_style`, `geopic:font_family` | `geopic_font_weight`, `geopic_font_style`, `geopic_font_family` |
 #' | `geopic:dash`, `geopic:hatch`, `geopic:placement`, `geopic:for` | `geopic_dash`, `geopic_hatch`, `geopic_placement`, `geopic_for` |
 #' | `geopic:head`, `geopic:filled`, `geopic:part`, `geopic:role`, `geopic:radius_in` | `geopic_head`, `geopic_filled`, `geopic_part`, `geopic_role`, `geopic_radius_in` |
 #'

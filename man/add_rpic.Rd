@@ -53,9 +53,9 @@ engine's DECISIONS G11), so the upper \code{text-size} zoom stop still keeps
 labels within MapLibre's 255 px limit — the same output as
 \code{rpic --geojson --maplibre --text-scale}.}
 
-\item{font}{the labels' font stack: \code{"style"} (the style's own font),
-\code{"spec"} (the engine's) or a character vector of font names; see
-Details.}
+\item{font}{the labels' font: \code{"style"} (the style's own fonts),
+\code{"spec"} (the engine's), a character vector of font names (one stack
+for every label) or a named list of stacks, \code{list(regular =, bold =, italic =, bold_italic =)}; see Details.}
 
 \item{fit}{zoom the map to the drawing's bounding box.}
 }
@@ -125,9 +125,23 @@ upright \code{Regular}/\code{Medium} stacks preferred over bold and italic ones
 (CARTO's positron: \verb{Montserrat Medium, Open Sans Regular, ...}). The
 style is read as for \code{before} (a URL is fetched once per session); when
 it cannot be read or has no such stack, the engine's font is kept,
-without a warning of its own. \code{"spec"} keeps the engine's
-\code{"Noto Sans Regular"}; any other character vector is the font stack
-itself (names the style's glyph server must serve).
+without a warning of its own. \code{"spec"} keeps the engine's Noto Sans
+placeholders; any other character vector is the font stack itself, for
+every label (names the style's glyph server must serve).
+
+A label written \code{bold} or \code{italic} in the pic source keeps its face on
+the map: the features carry \code{geopic:font_weight} and \code{geopic:font_style},
+and the layers' \code{text-font} picks a stack from them. With \code{"style"} the
+bold, italic and bold italic stacks are looked for among the stacks the
+style's own \code{symbol} layers use — the same family as the body font,
+\code{Bold} before \code{SemiBold}/\code{DemiBold} before heavier faces, an italic of
+plain weight — because those are the faces its glyph server is known to
+serve; a face the style does not use falls back to the body font (bold
+italic: to the bold, then the italic). A named list
+\code{list(regular =, bold =, italic =, bold_italic =)} of stacks names them
+outright (\code{regular} required, the same fallbacks). \code{mono} and
+\verb{font "..."} labels are drawn in the body family: the family travels as
+\code{geopic:font_family}, but basemap glyph servers rarely have more.
 
 \code{rpic_mapgl()} is the same function under its first name (an alias kept
 for code written against the development version).
