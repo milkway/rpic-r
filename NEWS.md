@@ -128,6 +128,24 @@ object for the source, pipe-first verbs, snake_case columns, data frames.
 * The knitr engine includes the rendered PNG as a figure again; with
   current knitr it printed the figure's path as text output.
 
+## Engine 0.19.0
+
+Tracks the rpic engine 0.19.0 (vendored crates 0.19.0). What reaches R users:
+
+* A label's face reaches the map. `"Marco Zero" bold`, `"Porto" italic`,
+  `"8080" mono` and `font "Georgia"` travel as `geopic:font_weight`,
+  `geopic:font_style` and `geopic:font_family` (`rpic_sf()` columns
+  `geopic_font_weight`, `geopic_font_style`, `geopic_font_family`, present
+  only when a label sets them), and the `text-font` of
+  `rpic_maplibre_layers()` picks a Bold / Italic stack from them.
+* `add_rpic(font = "style")` takes the bold, italic and bold italic stacks
+  from the style's own symbol layers (the body font when the style has
+  none), and `font` also accepts
+  `list(regular =, bold =, italic =, bold_italic =)`. `mono` and
+  `font "..."` labels are drawn in the body family on the map.
+* `rpic_layers()` / `autoplot()` draw bold and italic labels with the
+  matching `fontface`, and `mono` labels in the `"mono"` family.
+
 ## Engine 0.18.0
 
 Tracks the rpic engine 0.18.0 (vendored crates 0.18.0). What reaches R users:

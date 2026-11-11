@@ -32,7 +32,9 @@ are hex strings already, so the scales are identity scales); every text
 \code{\link[ggplot2:geom_sf_text]{ggplot2::geom_sf_text()}}, justified and turned as pic placed it — the
 \code{geopic_anchor} compass becomes \code{hjust}/\code{vjust} (\code{above} puts the point at
 the label's bottom, \code{ljust} at its left) and \code{geopic_rotation} becomes
-\code{angle}. \code{\link[ggplot2:coord_sf]{ggplot2::coord_sf()}} with \code{clip = "off"} completes the list, so
+\code{angle}; a label written \code{bold}, \code{italic} or \code{mono} keeps its face
+(\code{geopic_font_weight}, \code{geopic_font_style}, \code{geopic_font_family} become
+\code{fontface} and the \code{"mono"} family). \code{\link[ggplot2:coord_sf]{ggplot2::coord_sf()}} with \code{clip = "off"} completes the list, so
 labels at the drawing's edge are not cut.
 }
 \details{

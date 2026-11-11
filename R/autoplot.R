@@ -11,7 +11,9 @@
 #' [ggplot2::geom_sf_text()], justified and turned as pic placed it — the
 #' `geopic_anchor` compass becomes `hjust`/`vjust` (`above` puts the point at
 #' the label's bottom, `ljust` at its left) and `geopic_rotation` becomes
-#' `angle`. [ggplot2::coord_sf()] with `clip = "off"` completes the list, so
+#' `angle`; a label written `bold`, `italic` or `mono` keeps its face
+#' (`geopic_font_weight`, `geopic_font_style`, `geopic_font_family` become
+#' `fontface` and the `"mono"` family). [ggplot2::coord_sf()] with `clip = "off"` completes the list, so
 #' labels at the drawing's edge are not cut.
 #'
 #' The result is a list of layers and scales: add it to a plot with `+`.
@@ -107,12 +109,20 @@ rpic_layers <- function(x, ..., linewidth = 0.4, text_size = 3) {
     rot <- column(labels, "geopic_rotation", NA_real_)
     labels$.angle <- ifelse(is.na(rot), 0, rot)
     labels$.text <- column(labels, "geopic_text", NA_character_)
+    # the label's face, as pic set it (bold / italic / mono)
+    bold <- column(labels, "geopic_font_weight", NA_character_) %in% "bold"
+    italic <- column(labels, "geopic_font_style", NA_character_) %in% "italic"
+    labels$.face <- ifelse(bold & italic, "bold.italic",
+                           ifelse(bold, "bold", ifelse(italic, "italic", "plain")))
+    mono <- column(labels, "geopic_font_family", NA_character_) %in% "monospace"
+    labels$.family <- ifelse(mono, "mono", "")
     # the labels are points already: skip geom_sf_text()'s default
     # st_point_on_surface(), which warns on lon/lat data
     layers <- c(layers, list(
       ggplot2::geom_sf_text(
         data = labels,
-        mapping = aes(label = ".text", hjust = ".hjust", vjust = ".vjust", angle = ".angle"),
+        mapping = aes(label = ".text", hjust = ".hjust", vjust = ".vjust", angle = ".angle",
+                      fontface = ".face", family = ".family"),
         size = text_size, fun.geometry = function(g) g
       )
     ))
