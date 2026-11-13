@@ -128,6 +128,13 @@ object for the source, pipe-first verbs, snake_case columns, data frames.
 * The knitr engine includes the rendered PNG as a figure again; with
   current knitr it printed the figure's path as text output.
 
+## Engine 0.19.1
+
+Tracks the rpic engine 0.19.1 (vendored crates 0.19.1). Nothing changes for R
+users: the engine release only ships `LICENSE` and `ACKNOWLEDGMENTS.md` inside
+each crate and names dpic in the crate descriptions; rendering is the same as
+0.19.0.
+
 ## Engine 0.19.0
 
 Tracks the rpic engine 0.19.0 (vendored crates 0.19.0). What reaches R users:
