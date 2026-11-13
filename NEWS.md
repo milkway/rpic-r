@@ -221,6 +221,14 @@ users through the pic source and the JSON outputs:
   `.ft B`) are set aside as classic pic and dpic do instead of failing to
   parse.
 
+## Credits
+
+* The `Description`, the package help page and the README name 'dpic' by
+  J. D. Aplevich as the reference implementation of 'pic' whose grammar and
+  behaviour 'rpic' follows, and 'circuit_macros' as the model of the circuit
+  library. 'rpic' is not affiliated with or endorsed by the authors of
+  'pic', 'dpic', 'circuit_macros' or 'pikchr'.
+
 # rpic 0.12.1
 
 Tracks the rpic engine from 0.11.3 to 0.12.1 and adds one function.

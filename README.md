@@ -22,6 +22,15 @@ no ImageMagick):
   exact positions and did-you-mean hints;
 - a **knitr engine** for inline diagrams in R Markdown / Quarto.
 
+rpic follows the grammar and behaviour of
+[**dpic**](https://gitlab.com/aplevich/dpic) by **J. D. (Dwight) Aplevich**,
+the reference implementation of pic, and its circuit library is modelled on
+his [**circuit_macros**](https://gitlab.com/aplevich/circuit_macros).
+
+> An independent project, not affiliated with, maintained by or endorsed by
+> the authors of pic, dpic, circuit_macros or pikchr.
+> rpic was written with the assistance of AI coding tools.
+
 The language, its extensions and a live playground are documented at
 [rpic.dev](https://rpic.dev); this package wraps the same engine via
 [extendr](https://extendr.rs/).

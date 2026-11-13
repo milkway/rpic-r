@@ -8,7 +8,7 @@
 \description{
 \if{html}{\figure{logo.svg}{options: style='float: right' alt='logo' width='120'}}
 
-Renders diagrams written in the 'pic' picture-drawing language (Kernighan, 1984) to SVG, PNG and PDF, using 'rpic' \url{https://github.com/milkway/rpic-lang}, a reimplementation of 'pic' in 'Rust' with no system dependencies. Includes a native circuit-element library in the spirit of 'circuit_macros', TeX math labels typeset natively, structured compile diagnostics, and a 'knitr' language engine for inline diagrams in 'R Markdown' and 'Quarto' documents.
+Renders diagrams written in the 'pic' picture-drawing language (Kernighan, 1984) to SVG, PNG and PDF, using 'rpic' \url{https://github.com/milkway/rpic-lang}, a reimplementation of 'pic' in 'Rust' with no system dependencies, whose grammar and behaviour follow 'dpic' by J. D. Aplevich, the reference implementation of 'pic'. Includes a native circuit-element library modelled on his 'circuit_macros' (an independent re-authoring), TeX math labels typeset natively, structured compile diagnostics, and a 'knitr' language engine for inline diagrams in 'R Markdown' and 'Quarto' documents.
 }
 \seealso{
 Useful links:
